@@ -1,7 +1,7 @@
 Predicting Smoking Cessation Success Using Machine Learning: A Multi-Model Approach with Longitudinal Survey Data
 Authors: Ananda Downing, Angel Nivar
 Course: Data Mining
-Institution: [Your University]
+Institution: Georgia State University
 Timeline: 8 weeks (October - December 2025)
 
 📋 Project Overview
