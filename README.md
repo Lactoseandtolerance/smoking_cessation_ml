@@ -1,397 +1,298 @@
-# Predicting Smoking Cessation Success Using Machine Learning: A Multi-Model Approach with Public Health Survey Data
+Predicting Smoking Cessation Success Using Machine Learning: A Multi-Model Approach with Longitudinal Survey Data
+Authors: Ananda Downing, Angel Nivar
+Course: Data Mining
+Institution: [Your University]
+Timeline: 8 weeks (October - December 2025)
 
-**By: Ananda Downing, Angel Nivar**  
-**Timeline: 8 weeks | Course: Data Mining**
+📋 Project Overview
+Smoking remains a leading cause of preventable death worldwide. This project develops machine learning models to predict smoking cessation success one year after a quit attempt, using the TUS-CPS 2010-2011 Longitudinal Cohort – a nationally representative sample where baseline smokers were re-interviewed after one year to assess cessation outcomes.
+Research Question
+What individual characteristics, behavioral patterns, and quit strategies best predict successful smoking cessation one year after a quit attempt?
+Key Contributions
 
-## Abstract
+Novel application of SHAP values for interpretable cessation prediction using longitudinal data
+Evaluation of quit method combinations (e.g., NRT + counseling) rather than single interventions
+Fairness assessment across demographic subgroups to ensure equitable public health application
+Interactive dashboard for exploring model predictions and explanations
 
-Smoking remains a leading cause of preventable death worldwide, and understanding factors that influence successful cessation is critical for public health interventions. This project develops machine learning models to predict smoking cessation success based on individual characteristics, behavioral patterns, and quit strategies using publicly available health survey data. We will utilize the Tobacco Use Supplement to the Current Population Survey (TUS-CPS) 2018-2019 data, representing approximately 15,000+ current and former smokers.
 
-Our primary research question is: What individual characteristics, behavioral patterns, and quit strategies best predict successful smoking cessation (defined as sustained abstinence for 6+ months)? We will engineer 25-35 features spanning demographics, smoking history, nicotine dependence indicators, cessation methods used, and socioeconomic factors. Multiple machine learning algorithms including Logistic Regression, Random Forest, and XGBoost will be trained and compared using appropriate evaluation metrics (ROC-AUC, Precision-Recall curves, F1 scores) while addressing class imbalance through SMOTE and stratified sampling techniques. Model interpretation will be conducted using SHAP (SHapley Additive exPlanations) values to identify the most influential predictors of cessation success.
+🎯 Project Goals
 
-The final deliverables include: (1) a cleaned analytical dataset with engineered features and documentation, (2) trained and evaluated machine learning models with rigorous performance comparisons, (3) an interactive dashboard for exploring predictions and model explanations, and (4) a comprehensive IEEE-format technical report. This project demonstrates advanced data preprocessing, feature engineering, model evaluation, and interpretation techniques while addressing a meaningful public health question.
+Predict 30+ day smoking abstinence at 1-year follow-up among baseline smokers who made a quit attempt
+Engineer 25-35 features from demographics, smoking history, nicotine dependence indicators, and cessation methods
+Compare multiple ML models: Logistic Regression, Random Forest, XGBoost
+Interpret model predictions using SHAP (SHapley Additive exPlanations)
+Develop actionable insights for public health interventions
 
-## Data Strategy and Rationale
 
-**Primary Dataset: TUS-CPS (Tobacco Use Supplement to Current Population Survey)**
+📊 Data Source
+Dataset: Tobacco Use Supplement to the Current Population Survey (TUS-CPS) 2010-2011 Longitudinal Cohort
 
-We have selected TUS-CPS as our sole data source for the following methodological reasons:
-- Specifically designed to measure smoking cessation behaviors and outcomes
-- Contains validated quit success indicators (6-month and 12-month abstinence measures)
-- Large sample size of smokers and recent quitters (~30,000+ tobacco users per wave)
-- Includes comprehensive cessation method variables (NRT, counseling, medication, cold turkey)
-- Well-documented survey weights for population-level inference
-- Publicly available with detailed codebooks and user guides
+Design: True longitudinal cohort (baseline May 2010 → follow-up May 2011)
+Sample Size: ~2,400-2,500 baseline smokers with complete follow-up data
+Target Variable: 30+ days smoking abstinence at follow-up
+Features: Demographics, smoking history, nicotine dependence, cessation methods (NRT, medications, counseling)
+Data Access: Publicly available from NCI TUS-CPS
 
-**Target Variable Definition:**
-- **Cessation Success**: Self-reported abstinence from smoking for 6+ consecutive months among individuals who made a quit attempt in the past 12 months
-- **Binary outcome**: Success (1) vs. Relapse/Ongoing smoking (0)
-- Expected class distribution: ~30% success rate based on literature (moderate imbalance)
+Citation:
+US Department of Commerce, Census Bureau. National Cancer Institute and Food and Drug 
+Administration co-sponsored Tobacco Use Supplement to the Current Population Survey 
+(TUS-CPS), 2010-2011 Longitudinal Cohort.
 
-**Expected Sample Size:**
-- Full TUS-CPS sample: ~240,000 respondents
-- Current/former smokers: ~30,000
-- Recent quit attempters with outcome data: 8,000-12,000 (analytical sample)
+🛠️ Technical Stack
+Core Libraries:
 
-## Weekly Timeline and Milestones
+Data Processing: pandas, numpy
+Machine Learning: scikit-learn, xgboost, imbalanced-learn
+Model Interpretation: shap
+Visualization: matplotlib, seaborn, plotly
+Dashboard: streamlit
 
-### Week 1: Project Setup and Initial Data Exploration
-**Checkpoint: Environment ready, data downloaded, initial EDA complete**
+Development:
 
-**Angel:**
-- Set up GitHub repository with proper structure (data/, notebooks/, src/, docs/, reports/)
-- Download TUS-CPS 2018-2019 data files and documentation
-- Create data dictionary mapping TUS-CPS variable codes to readable names
-- Initial data loading: verify file formats, check for corruption
+Language: Python 3.9+
+Version Control: Git/GitHub
+Environment: Virtual environment (conda or venv)
 
-**Ananda:**
-- Set up Python environment (Python 3.9+, conda environment with requirements.txt)
-- Install core libraries: pandas, numpy, scikit-learn, xgboost, shap, imbalanced-learn, matplotlib, seaborn
-- Create initial EDA notebook: dataset shape, column types, missing data overview
-- Document survey structure and weighting methodology from TUS-CPS documentation
 
-**Both:**
-- Team meeting (end of week): Review data structure, confirm target variable availability, finalize feature list
+🚀 Getting Started
+Prerequisites
 
----
+Python 3.9 or higher
+Git
 
-### Week 2: Data Cleaning and Preprocessing
-**Checkpoint: Clean dataset ready for feature engineering**
+Installation
 
-**Angel:**
-- Handle missing data:
-  - Document missingness patterns (MCAR, MAR, MNAR assessment)
-  - Implement appropriate imputation strategies (mode for categorical, median for numerical, or multiple imputation if needed)
-  - Create missingness indicator flags for features with >10% missing
-- Remove duplicate records and resolve inconsistencies
-- Filter dataset to analytical sample (recent quit attempters with outcome data)
-- Document all cleaning decisions in preprocessing log
+Clone the repository:
 
-**Ananda:**
-- Define and extract target variable (6-month cessation success)
-- Verify target variable: check distribution, examine edge cases
-- Create train/validation/test split (60%/20%/20%) with stratification on outcome
-- Document final sample size and basic demographic characteristics
-- Initial outlier detection using IQR and z-score methods for continuous variables
+bashgit clone https://github.com/[your-username]/smoking-cessation-ml.git
+cd smoking-cessation-ml
 
-**Both:**
-- Peer review each other's preprocessing code
-- Team meeting: Review cleaned data statistics, discuss any data quality concerns
+Set up Python environment:
 
----
+Option A: Using conda (recommended)
+bashconda create -n smoking-cessation python=3.9
+conda activate smoking-cessation
+pip install -r requirements.txt
+Option B: Using venv
+bashpython -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
 
-### Week 3: Feature Engineering and Exploratory Analysis
-**Checkpoint: Final feature set created, bivariate relationships analyzed**
+Download the data:
 
-**Angel:**
-- Engineer demographic features:
-  - Age groups, education levels (ordinal encoding)
-  - Income categories, employment status
-  - Geographic region indicators
-- Engineer smoking history features:
-  - Smoking intensity (cigarettes per day, pack-years calculation)
-  - Age started smoking, years as smoker
-  - Previous quit attempts (count, longest duration)
-  - Time to first cigarette (nicotine dependence proxy)
 
-**Ananda:**
-- Engineer cessation method features:
-  - NRT usage (patch, gum, lozenge - one-hot encode)
-  - Prescription medication (varenicline, bupropion)
-  - Behavioral support (counseling, quitline, app)
-  - Quit method combinations (multi-method vs. single method)
-- Engineer contextual features:
-  - Household smoking (other smokers present)
-  - Workplace smoking policies
-  - Health insurance coverage
-- Create interaction features (e.g., high_dependence × NRT_use)
+Visit TUS-CPS 2010-2011 Data
+Download the "2010-2011 Longitudinal Cohort" file
+Download the technical documentation and codebook
+Place data files in data/raw/ directory
 
-**Both:**
-- Exploratory data analysis:
-  - Univariate distributions (histograms, bar charts)
-  - Bivariate analysis (cessation success vs. each feature)
-  - Correlation matrix and multicollinearity check (VIF)
-  - Feature selection: remove highly correlated or zero-variance features
-- Apply scaling/normalization (StandardScaler for tree-based models, RobustScaler if outliers present)
-- Team meeting: Finalize feature set (~25-35 features), document feature engineering rationale
+
+Verify installation:
+
+bashpython -c "import pandas, sklearn, xgboost, shap; print('All dependencies installed successfully!')"
+```
 
 ---
 
-### Week 4: Baseline Models and Class Imbalance Handling
-**Checkpoint: Three baseline models trained, class imbalance strategy selected**
+## 📁 Project Structure
+```
+smoking-cessation-ml/
+│
+├── data/
+│   ├── raw/                      # Original TUS-CPS data files (not committed to Git)
+│   ├── processed/                # Cleaned and processed datasets
+│   └── data_dictionary.md        # Variable descriptions
+│
+├── notebooks/
+│   ├── 01_data_exploration.ipynb           # Initial EDA
+│   ├── 02_data_cleaning.ipynb              # Preprocessing and cleaning
+│   ├── 03_feature_engineering.ipynb        # Feature creation
+│   ├── 04_modeling_baseline.ipynb          # Baseline models
+│   ├── 05_modeling_advanced.ipynb          # Hyperparameter tuning
+│   ├── 06_model_interpretation.ipynb       # SHAP analysis
+│   └── 07_fairness_assessment.ipynb        # Subgroup analysis
+│
+├── src/
+│   ├── __init__.py
+│   ├── data_preprocessing.py     # Data cleaning functions
+│   ├── feature_engineering.py    # Feature creation functions
+│   ├── modeling.py               # Model training utilities
+│   ├── evaluation.py             # Evaluation metrics
+│   └── visualization.py          # Plotting functions
+│
+├── models/
+│   ├── logistic_regression.pkl   # Trained models
+│   ├── random_forest.pkl
+│   └── xgboost.pkl
+│
+├── dashboard/
+│   ├── app.py                    # Streamlit dashboard
+│   ├── pages/                    # Dashboard pages
+│   └── assets/                   # Images, CSS
+│
+├── reports/
+│   ├── figures/                  # Generated plots for report
+│   ├── final_report.pdf          # IEEE format technical report
+│   └── presentation.pdf          # Presentation slides
+│
+├── .gitignore
+├── README.md
+├── requirements.txt
+└── LICENSE
 
-**Ananda:**
-- Implement class imbalance strategies:
-  - Calculate baseline class distribution
-  - Apply SMOTE to training data (preserve validation/test sets)
-  - Experiment with class_weight='balanced' parameter
-  - Compare strategies using cross-validation
-- Build Model 1: Logistic Regression
-  - Train baseline with all features
-  - L2 regularization with hyperparameter tuning (C values: 0.001, 0.01, 0.1, 1, 10)
-  - Generate coefficient interpretation
+📝 Usage
+1. Data Preprocessing
+bashjupyter notebook notebooks/01_data_exploration.ipynb
+jupyter notebook notebooks/02_data_cleaning.ipynb
+2. Feature Engineering
+bashjupyter notebook notebooks/03_feature_engineering.ipynb
+3. Model Training
+bashjupyter notebook notebooks/04_modeling_baseline.ipynb
+jupyter notebook notebooks/05_modeling_advanced.ipynb
+4. Model Interpretation
+bashjupyter notebook notebooks/06_model_interpretation.ipynb
+5. Run Dashboard
+bashstreamlit run dashboard/app.py
 
-**Angel:**
-- Build Model 2: Random Forest
-  - Train baseline (n_estimators=100, 200, 500)
-  - Tune max_depth, min_samples_split, min_samples_leaf
-  - Extract feature importance (Gini importance)
-  - Analyze out-of-bag error estimates
-- Implement 5-fold stratified cross-validation framework
-  - Create reusable CV function
-  - Calculate mean CV scores with standard deviations
+🔬 Methodology
+Data Preprocessing
 
-**Both:**
-- Model evaluation on validation set:
-  - ROC curves and AUC
-  - Precision-Recall curves and PR-AUC
-  - Confusion matrices
-  - F1 scores, sensitivity, specificity, balanced accuracy
-- Team meeting: Compare baseline results, select class imbalance strategy, plan hyperparameter optimization
+Handle missing data using multiple imputation
+Outlier detection using IQR and z-score methods
+Create train/validation/test splits (60%/20%/20%) with stratification
+Apply SMOTE to address class imbalance (~18-21% success rate)
 
----
+Feature Engineering (25-35 features)
+Demographic Features:
 
-### Week 5: Advanced Models and Hyperparameter Tuning
-**Checkpoint: Optimized models trained, performance documented**
+Age groups, education level, income, employment status, geographic region
 
-**Ananda:**
-- Build Model 3: XGBoost
-  - Tune learning_rate, max_depth, n_estimators, subsample, colsample_bytree
-  - Implement early stopping to prevent overfitting
-  - Use RandomizedSearchCV or GridSearchCV for efficient tuning
-- Document all hyperparameter search spaces and final selections
-- Create hyperparameter tuning visualizations (validation curves)
+Smoking History:
 
-**Angel:**
-- Refine Random Forest and Logistic Regression with optimized hyperparameters
-- Perform threshold optimization:
-  - Plot precision-recall tradeoff curves
-  - Select optimal decision threshold based on use case (balance sensitivity/specificity)
-- Conduct statistical comparison of models:
-  - McNemar's test for paired model comparison
-  - Bootstrapped confidence intervals for performance metrics
+Cigarettes per day, pack-years, age started smoking, years as smoker
+Previous quit attempts, time to first cigarette (nicotine dependence proxy)
 
-**Both:**
-- Final model evaluation on held-out test set
-  - Generate comprehensive performance report for all three models
-  - Compare test performance to validation performance (check for overfitting)
-- Team meeting: Select final production model(s), discuss interpretation strategy
+Cessation Methods:
 
----
+NRT usage (patch, gum, lozenge, inhaler, nasal spray)
+Prescription medications (varenicline, bupropion)
+Behavioral support (counseling, quitline)
+Multi-method combinations
 
-### Week 6: Model Interpretation and Validation
-**Checkpoint: SHAP analysis complete, model insights documented**
+Contextual Factors:
 
-**Ananda:**
-- SHAP (SHapley Additive exPlanations) analysis:
-  - Calculate SHAP values for final model(s)
-  - Generate global feature importance plots (bar plots, beeswarm plots)
-  - Create individual prediction explanations (waterfall plots for sample cases)
-  - Analyze feature interactions using SHAP dependence plots
-- Document top 10 most influential features with interpretation
+Household smoking, workplace policies, health insurance coverage
 
-**Angel:**
-- Subgroup analysis and fairness assessment:
-  - Evaluate model performance across demographic groups (age, gender, income, race/ethnicity)
-  - Check for performance disparities (disparate impact analysis)
-  - Document any fairness concerns and limitations
-- Error analysis:
-  - Examine false positives and false negatives
-  - Identify systematic prediction errors
-  - Create case studies of misclassified examples
+Interaction Features:
 
-**Both:**
-- Compile visualization library:
-  - Create publication-quality figures for report and presentation
-  - Ensure all plots have proper labels, legends, and captions
-- Team meeting: Review interpretation findings, outline report structure
+High dependence × NRT use
+Prescription medication × counseling
 
----
+Models
 
-### Week 7: Dashboard Development and Report Writing
-**Checkpoint: Dashboard deployed, draft report complete**
+Logistic Regression (baseline interpretable model)
+Random Forest (ensemble method with feature importance)
+XGBoost (gradient boosting for performance)
 
-**Angel:**
-- Build interactive dashboard (using Streamlit or Plotly Dash):
-  - **Page 1**: Project overview, motivation, and data description
-  - **Page 2**: Data explorer with filters (demographics, smoking history) and dynamic visualizations
-  - **Page 3**: Model performance comparison (ROC curves, metrics table, confusion matrices)
-  - **Page 4**: Feature importance dashboard (SHAP summary, individual feature deep-dives)
-  - **Page 5**: Prediction interface (input features, get prediction with explanation)
-  - **Page 6**: Key insights, limitations, ethical considerations, and references
-- Deploy dashboard (Streamlit Cloud or local hosting)
+Evaluation Metrics
 
-**Ananda:**
-- Write IEEE-format report (4-6 pages):
-  - **Abstract** (150-200 words)
-  - **Introduction**: Motivation, public health context, research question
-  - **Related Work**: Brief literature review on ML for smoking cessation (3-5 key papers)
-  - **Methods**: Data description, preprocessing, feature engineering, models, evaluation metrics
-  - **Results**: Model performance, SHAP analysis, key findings
-  - **Discussion**: Interpretation, limitations, public health implications, future work
-  - **Conclusion**: Summary of contributions
-  - **References**: APA or IEEE citation style
-- Create infographic summarizing key findings (one-page visual summary)
+ROC-AUC and Precision-Recall AUC
+Confusion matrices
+F1 score, sensitivity, specificity, balanced accuracy
+Fairness metrics across demographic subgroups
 
-**Both:**
-- Peer review report draft
-- Test dashboard functionality and fix bugs
+Model Interpretation
 
----
+SHAP values for global and local explanations
+Feature importance rankings
+Interaction effect analysis
 
-### Week 8: Finalization and Presentation Preparation
-**Checkpoint: Final deliverables ready, presentation rehearsed**
 
-**Angel:**
-- Finalize dashboard:
-  - Incorporate feedback
-  - Add disclaimers ("Educational purposes only, not medical advice")
-  - Test on multiple browsers/devices
-  - Create brief user guide
-- Polish visualizations for presentation
+📊 Expected Outcomes
+Model Performance Target: ROC-AUC > 0.70
+Key Predictors (Hypothesized):
 
-**Ananda:**
-- Finalize report:
-  - Incorporate peer feedback
-  - Proofread for grammar, spelling, formatting
-  - Ensure IEEE template compliance
-  - Generate final PDF
-- Clean and document codebase:
-  - Add docstrings and comments
-  - Create README.md with project overview and setup instructions
-  - Ensure reproducibility (requirements.txt, random seeds set)
+Nicotine dependence (time to first cigarette)
+Multi-method cessation approaches (NRT + counseling)
+Socioeconomic factors (education, income)
+Previous quit attempt history
 
-**Both:**
-- Create 10-minute presentation (8-10 slides):
-  - Slide 1: Title, authors, motivation
-  - Slide 2: Research question and data overview
-  - Slide 3: Methodology overview (pipeline diagram)
-  - Slide 4: Feature engineering highlights
-  - Slide 5: Model comparison results
-  - Slide 6: SHAP analysis and key predictors
-  - Slide 7: Dashboard demo (live or screenshots)
-  - Slide 8: Public health implications and limitations
-  - Slide 9: Conclusions and future work
-  - Slide 10: Questions
-- Rehearse presentation multiple times (practice timing, transitions, Q&A)
-- Final team meeting: Last-minute checks, assign presentation roles
+Public Health Insights:
 
----
+Identify high-risk relapse profiles
+Recommend optimal cessation method combinations
+Inform targeted intervention strategies
 
-## Technical Infrastructure
 
-**Version Control:**
-- GitHub repository (private during development, public after submission if permitted)
-- Branching strategy: `main` (stable), `dev` (integration), feature branches for each major task
-- Commit frequently with descriptive messages
+📅 Project Timeline
+WeekPhaseDeliverables1-3Data Preparation & Feature EngineeringCleaned dataset, 25-35 engineered features4-6Modeling & Evaluation3 trained models, SHAP analysis, fairness assessment7-8Deployment & CommunicationInteractive dashboard, IEEE report, presentation
 
-**Computing Resources:**
-- Local development on personal laptops (sufficient for TUS-CPS dataset size)
-- Google Colab Pro (optional backup for model training if local resources insufficient)
+⚠️ Limitations & Ethical Considerations
+Data Limitations
 
-**Environment Management:**
-- Conda environment with Python 3.9+
-- `requirements.txt` with pinned versions for reproducibility
+Temporal: Data from 2010-2011 predates widespread e-cigarette use and newer cessation products
+Self-reported outcomes: No biochemical verification (cotinine testing)
+30-day abstinence: Early marker, not long-term sustained cessation (6+ months)
+Generalizability: US population sample may not generalize internationally
 
-**Collaboration Tools:**
-- Slack/Discord for daily communication
-- Weekly in-person/Zoom meetings
-- Google Docs for collaborative writing (then transfer to LaTeX/Word for IEEE format)
-- Jupyter notebooks for exploration, Python scripts for production code
+Ethical Considerations
 
----
+Model is for educational and research purposes only
+Not medical advice – individuals should consult healthcare professionals
+Fairness audits conducted to identify performance disparities across demographic groups
+All limitations transparently documented
 
-## Ethical Considerations and Limitations
+Responsible Use
+This model should inform, not replace, clinical judgment. Predictions should be interpreted alongside patient preferences, clinical context, and evidence-based guidelines.
 
-**IRB and Data Ethics:**
-- Confirm TUS-CPS data is de-identified and publicly available (no IRB required for secondary analysis)
-- Acknowledge survey participants and data stewards in report
+👥 Team
+Ananda Downing
 
-**Bias and Fairness:**
-- Assess model performance across demographic subgroups
-- Document any performance disparities and discuss implications
-- Avoid making causal claims (observational data, confounding variables present)
+Focus: Feature engineering, Logistic Regression, XGBoost, SHAP analysis, report writing
+Email: [ananda.email@university.edu]
 
-**Responsible Communication:**
-- Include clear disclaimer: "This model is for educational and research purposes only and does not constitute medical advice. Individuals seeking to quit smoking should consult healthcare professionals."
-- Acknowledge limitations: self-reported data, potential recall bias, generalizability constraints
+Angel Nivar
 
-**Limitations to Explicitly Document:**
-- Cross-sectional survey design limits causal inference
-- Self-reported cessation success (no biochemical verification)
-- Missing data and potential selection bias
-- Model trained on US population may not generalize internationally
-- Temporal factors (quit date, seasonality) not fully captured
+Focus: Data preprocessing, Random Forest, model evaluation, dashboard development
+Email: [angel.email@university.edu]
 
----
 
-## Risk Mitigation
+🙏 Acknowledgments
 
-**Potential Risks and Mitigation Strategies:**
+National Cancer Institute (NCI) for providing publicly accessible TUS-CPS data
+US Census Bureau for conducting the Current Population Survey
+TUS-CPS participants for contributing data to advance public health research
+Course Instructor: [Professor Name] for project guidance
 
-1. **Data quality issues discovered late:**
-   - Mitigation: Complete thorough EDA in Weeks 1-2, maintain flexibility in feature selection
 
-2. **Class imbalance more severe than expected:**
-   - Mitigation: Multiple strategies planned (SMOTE, class weights, threshold tuning), early testing in Week 4
+📚 References
+Key papers using TUS-CPS 2010-2011 longitudinal cohort:
 
-3. **Models perform poorly (AUC < 0.65):**
-   - Mitigation: Focus on model interpretation and feature analysis; reframe as exploratory study
+Kalkhoran S, et al. (2016). E-cigarette use and smoking reduction or cessation in the 2010/2011 TUS-CPS longitudinal cohort. BMC Public Health, 16(1), 1105.
+Pierce JP, et al. (2018). Effectiveness of Pharmaceutical Smoking Cessation Aids in a Nationally Representative Cohort of American Smokers. JNCI: Journal of the National Cancer Institute, 110(6), 581-587.
+Hughes JR, et al. (2003). Measures of abstinence in clinical trials: issues and recommendations. Nicotine & Tobacco Research, 5(1), 13-25.
 
-4. **Time overruns in specific phases:**
-   - Mitigation: Weekly checkpoints allow early detection, can adjust scope (e.g., reduce to 2 models, simplify dashboard)
 
-5. **Technical difficulties with dashboard deployment:**
-   - Mitigation: Start dashboard early in Week 7, have backup option (static HTML report with interactive plots)
+📄 License
+This project is for educational purposes as part of a university data mining course. Data is publicly available from NCI. Code is available under MIT License.
 
----
+📞 Contact
+For questions about this project, please contact:
 
-## Success Metrics (Aligned with Rubric)
+Ananda Downing: [ananda.email@university.edu]
+Angel Nivar: [angel.email@university.edu]
 
-**Questions (Novel, Motivated, Insightful):**
-- Research question addresses real public health need
-- Clear motivation tied to reducing smoking-related mortality
-- Novel application of SHAP for cessation prediction interpretability
 
-**Analysis (Complete, Advanced, Informative):**
-- All data mining stages covered: preprocessing, analysis, model evaluation, interpretation
-- Advanced techniques: SMOTE, hyperparameter tuning, SHAP, fairness assessment
-- Multiple models compared rigorously
+🔗 Useful Links
 
-**Results/Understanding (Insightful, Tied to Context):**
-- SHAP analysis provides actionable insights for interventions
-- Discussion explicitly connects findings to public health implications
-- All plots properly labeled with context
+TUS-CPS Official Website
+TUS-CPS 2010-2011 Data Download
+SHAP Documentation
+Scikit-learn Documentation
+XGBoost Documentation
 
-**Presentation (Correct, Complete, Convincing):**
-- 10-minute presentation with clear narrative arc
-- Visual slides complement verbal explanation
-- Live dashboard demo showcases technical implementation
 
-**Writing (IEEE Format, Clear, Grammatically Correct):**
-- Minimum 4 pages in IEEE format
-- Clear explanation of methods and results
-- Outstanding structure and organization
+Disclaimer: This model is for educational and research purposes only and does not constitute medical advice. Individuals seeking to quit smoking should consult qualified healthcare professionals.
 
-**Code (Well-Organized, Readable, Clear Variable Names):**
-- Modular code structure, functions with docstrings
-- Meaningful variable/function names
-- No irrelevant code, clean repository
-
----
-
-## Deliverables Checklist
-
-- [ ] Cleaned analytical dataset (CSV with data dictionary)
-- [ ] Jupyter notebooks documenting EDA, preprocessing, modeling
-- [ ] Trained model files (pickled sklearn/xgboost models)
-- [ ] Interactive dashboard (deployed or local)
-- [ ] IEEE-format technical report (PDF, 4-6 pages)
-- [ ] Presentation slides (PDF or PPTX)
-- [ ] GitHub repository with README and documentation
-- [ ] Infographic summary (optional but impressive)
-
----
-
-**Final Notes:**
-This plan prioritizes rigor, reproducibility, and clear communication. By focusing on a single, well-suited dataset (TUS-CPS) rather than attempting complex multi-survey integration, we ensure methodological soundness while maintaining ambitious analytical goals. Weekly checkpoints enable course correction, and the distributed workload balances team contributions across all project phases.
+Last Updated: October 2025
