@@ -1,10 +1,11 @@
-Predicting Smoking Cessation Success Using Machine Learning: A Multi-Model Approach with Longitudinal Survey Data
+Predicting Smoking Cessation Success Using Machine Learning
+A Multi-Model Approach with Longitudinal Survey Data
+
 Authors: Ananda Downing, Angel Nivar
 Course: Data Mining
-Institution: Georgia State University
 Timeline: 8 weeks (October - December 2025)
 
-📋 Project Overview
+Project Overview
 Smoking remains a leading cause of preventable death worldwide. This project develops machine learning models to predict smoking cessation success one year after a quit attempt, using the TUS-CPS 2010-2011 Longitudinal Cohort – a nationally representative sample where baseline smokers were re-interviewed after one year to assess cessation outcomes.
 Research Question
 What individual characteristics, behavioral patterns, and quit strategies best predict successful smoking cessation one year after a quit attempt?
@@ -16,22 +17,13 @@ Fairness assessment across demographic subgroups to ensure equitable public heal
 Interactive dashboard for exploring model predictions and explanations
 
 
-🎯 Project Goals
-
-Predict 30+ day smoking abstinence at 1-year follow-up among baseline smokers who made a quit attempt
-Engineer 25-35 features from demographics, smoking history, nicotine dependence indicators, and cessation methods
-Compare multiple ML models: Logistic Regression, Random Forest, XGBoost
-Interpret model predictions using SHAP (SHapley Additive exPlanations)
-Develop actionable insights for public health interventions
-
-
-📊 Data Source
+Data Source
 Dataset: Tobacco Use Supplement to the Current Population Survey (TUS-CPS) 2010-2011 Longitudinal Cohort
 
 Design: True longitudinal cohort (baseline May 2010 → follow-up May 2011)
-Sample Size: ~2,400-2,500 baseline smokers with complete follow-up data
+Sample Size: Approximately 2,400-2,500 baseline smokers with complete follow-up data
 Target Variable: 30+ days smoking abstinence at follow-up
-Features: Demographics, smoking history, nicotine dependence, cessation methods (NRT, medications, counseling)
+Features: Demographics, smoking history, nicotine dependence, cessation methods
 Data Access: Publicly available from NCI TUS-CPS
 
 Citation:
@@ -39,8 +31,8 @@ US Department of Commerce, Census Bureau. National Cancer Institute and Food and
 Administration co-sponsored Tobacco Use Supplement to the Current Population Survey 
 (TUS-CPS), 2010-2011 Longitudinal Cohort.
 
-🛠️ Technical Stack
-Core Libraries:
+Technical Stack
+Core Libraries
 
 Data Processing: pandas, numpy
 Machine Learning: scikit-learn, xgboost, imbalanced-learn
@@ -48,148 +40,143 @@ Model Interpretation: shap
 Visualization: matplotlib, seaborn, plotly
 Dashboard: streamlit
 
-Development:
+Development Environment
 
 Language: Python 3.9+
 Version Control: Git/GitHub
-Environment: Virtual environment (conda or venv)
+Environment Manager: conda or venv
 
 
-🚀 Getting Started
+Installation
 Prerequisites
 
 Python 3.9 or higher
 Git
 
-Installation
-
-Clone the repository:
-
+Setup Instructions
+1. Clone the repository
 bashgit clone https://github.com/[your-username]/smoking-cessation-ml.git
 cd smoking-cessation-ml
-
-Set up Python environment:
-
-Option A: Using conda (recommended)
+2. Create virtual environment
+Using conda:
 bashconda create -n smoking-cessation python=3.9
 conda activate smoking-cessation
 pip install -r requirements.txt
-Option B: Using venv
+Using venv:
 bashpython -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-Download the data:
-
+3. Download data
 
 Visit TUS-CPS 2010-2011 Data
 Download the "2010-2011 Longitudinal Cohort" file
 Download the technical documentation and codebook
 Place data files in data/raw/ directory
 
-
-Verify installation:
-
-bashpython -c "import pandas, sklearn, xgboost, shap; print('All dependencies installed successfully!')"
+4. Verify installation
+bashpython -c "import pandas, sklearn, xgboost, shap; print('Success!')"
 ```
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 ```
 smoking-cessation-ml/
 │
 ├── data/
-│   ├── raw/                      # Original TUS-CPS data files (not committed to Git)
-│   ├── processed/                # Cleaned and processed datasets
-│   └── data_dictionary.md        # Variable descriptions
+│   ├── raw/                                # Original TUS-CPS data (not in Git)
+│   ├── processed/                          # Cleaned datasets
+│   └── data_dictionary.md                  # Variable descriptions
 │
 ├── notebooks/
-│   ├── 01_data_exploration.ipynb           # Initial EDA
-│   ├── 02_data_cleaning.ipynb              # Preprocessing and cleaning
-│   ├── 03_feature_engineering.ipynb        # Feature creation
-│   ├── 04_modeling_baseline.ipynb          # Baseline models
-│   ├── 05_modeling_advanced.ipynb          # Hyperparameter tuning
-│   ├── 06_model_interpretation.ipynb       # SHAP analysis
-│   └── 07_fairness_assessment.ipynb        # Subgroup analysis
+│   ├── 01_data_exploration.ipynb
+│   ├── 02_data_cleaning.ipynb
+│   ├── 03_feature_engineering.ipynb
+│   ├── 04_modeling_baseline.ipynb
+│   ├── 05_modeling_advanced.ipynb
+│   ├── 06_model_interpretation.ipynb
+│   └── 07_fairness_assessment.ipynb
 │
 ├── src/
-│   ├── __init__.py
-│   ├── data_preprocessing.py     # Data cleaning functions
-│   ├── feature_engineering.py    # Feature creation functions
-│   ├── modeling.py               # Model training utilities
-│   ├── evaluation.py             # Evaluation metrics
-│   └── visualization.py          # Plotting functions
+│   ├── data_preprocessing.py
+│   ├── feature_engineering.py
+│   ├── modeling.py
+│   ├── evaluation.py
+│   └── visualization.py
 │
 ├── models/
-│   ├── logistic_regression.pkl   # Trained models
+│   ├── logistic_regression.pkl
 │   ├── random_forest.pkl
 │   └── xgboost.pkl
 │
 ├── dashboard/
-│   ├── app.py                    # Streamlit dashboard
-│   ├── pages/                    # Dashboard pages
-│   └── assets/                   # Images, CSS
+│   ├── app.py
+│   ├── pages/
+│   └── assets/
 │
 ├── reports/
-│   ├── figures/                  # Generated plots for report
-│   ├── final_report.pdf          # IEEE format technical report
-│   └── presentation.pdf          # Presentation slides
+│   ├── figures/
+│   ├── final_report.pdf
+│   └── presentation.pdf
 │
-├── .gitignore
-├── README.md
 ├── requirements.txt
+├── README.md
+├── .gitignore
 └── LICENSE
 
-📝 Usage
-1. Data Preprocessing
-bashjupyter notebook notebooks/01_data_exploration.ipynb
+Usage
+Run Notebooks
+bash# Data exploration and cleaning
+jupyter notebook notebooks/01_data_exploration.ipynb
 jupyter notebook notebooks/02_data_cleaning.ipynb
-2. Feature Engineering
-bashjupyter notebook notebooks/03_feature_engineering.ipynb
-3. Model Training
-bashjupyter notebook notebooks/04_modeling_baseline.ipynb
+
+# Feature engineering
+jupyter notebook notebooks/03_feature_engineering.ipynb
+
+# Model training
+jupyter notebook notebooks/04_modeling_baseline.ipynb
 jupyter notebook notebooks/05_modeling_advanced.ipynb
-4. Model Interpretation
-bashjupyter notebook notebooks/06_model_interpretation.ipynb
-5. Run Dashboard
+
+# Model interpretation
+jupyter notebook notebooks/06_model_interpretation.ipynb
+Launch Dashboard
 bashstreamlit run dashboard/app.py
 
-🔬 Methodology
+Methodology
 Data Preprocessing
 
 Handle missing data using multiple imputation
 Outlier detection using IQR and z-score methods
-Create train/validation/test splits (60%/20%/20%) with stratification
-Apply SMOTE to address class imbalance (~18-21% success rate)
+Train/validation/test splits (60%/20%/20%) with stratification
+Apply SMOTE to address class imbalance
 
-Feature Engineering (25-35 features)
-Demographic Features:
+Feature Engineering
+Demographic Features
 
 Age groups, education level, income, employment status, geographic region
 
-Smoking History:
+Smoking History
 
 Cigarettes per day, pack-years, age started smoking, years as smoker
-Previous quit attempts, time to first cigarette (nicotine dependence proxy)
+Previous quit attempts, time to first cigarette
 
-Cessation Methods:
+Cessation Methods
 
 NRT usage (patch, gum, lozenge, inhaler, nasal spray)
 Prescription medications (varenicline, bupropion)
 Behavioral support (counseling, quitline)
 Multi-method combinations
 
-Contextual Factors:
+Contextual Factors
 
 Household smoking, workplace policies, health insurance coverage
 
-Interaction Features:
+Interaction Features
 
 High dependence × NRT use
 Prescription medication × counseling
 
-Models
+Machine Learning Models
 
 Logistic Regression (baseline interpretable model)
 Random Forest (ensemble method with feature importance)
@@ -209,9 +196,12 @@ Feature importance rankings
 Interaction effect analysis
 
 
-📊 Expected Outcomes
-Model Performance Target: ROC-AUC > 0.70
-Key Predictors (Hypothesized):
+Timeline
+WeekPhaseDeliverables1-3Data Preparation & Feature EngineeringCleaned dataset, 25-35 engineered features4-6Modeling & Evaluation3 trained models, SHAP analysis, fairness assessment7-8Deployment & CommunicationInteractive dashboard, IEEE report, presentation
+
+Expected Outcomes
+Performance Target: ROC-AUC > 0.70
+Hypothesized Key Predictors:
 
 Nicotine dependence (time to first cigarette)
 Multi-method cessation approaches (NRT + counseling)
@@ -225,66 +215,41 @@ Recommend optimal cessation method combinations
 Inform targeted intervention strategies
 
 
-📅 Project Timeline
-WeekPhaseDeliverables1-3Data Preparation & Feature EngineeringCleaned dataset, 25-35 engineered features4-6Modeling & Evaluation3 trained models, SHAP analysis, fairness assessment7-8Deployment & CommunicationInteractive dashboard, IEEE report, presentation
-
-⚠️ Limitations & Ethical Considerations
+Limitations
 Data Limitations
 
 Temporal: Data from 2010-2011 predates widespread e-cigarette use and newer cessation products
 Self-reported outcomes: No biochemical verification (cotinine testing)
-30-day abstinence: Early marker, not long-term sustained cessation (6+ months)
-Generalizability: US population sample may not generalize internationally
+Follow-up duration: 30-day abstinence is an early marker, not long-term sustained cessation
+Generalizability: US population sample may not apply internationally
 
 Ethical Considerations
+This model is for educational and research purposes only. It does not constitute medical advice. Individuals seeking to quit smoking should consult qualified healthcare professionals.
+Fairness audits will be conducted to identify performance disparities across demographic groups. All limitations will be transparently documented in the final report.
 
-Model is for educational and research purposes only
-Not medical advice – individuals should consult healthcare professionals
-Fairness audits conducted to identify performance disparities across demographic groups
-All limitations transparently documented
-
-Responsible Use
-This model should inform, not replace, clinical judgment. Predictions should be interpreted alongside patient preferences, clinical context, and evidence-based guidelines.
-
-👥 Team
+Team
 Ananda Downing
-
 Focus: Feature engineering, Logistic Regression, XGBoost, SHAP analysis, report writing
-Email: [ananda.email@university.edu]
-
+Email: ananda.email@university.edu
 Angel Nivar
-
 Focus: Data preprocessing, Random Forest, model evaluation, dashboard development
-Email: [angel.email@university.edu]
+Email: angel.email@university.edu
 
-
-🙏 Acknowledgments
+Acknowledgments
 
 National Cancer Institute (NCI) for providing publicly accessible TUS-CPS data
 US Census Bureau for conducting the Current Population Survey
 TUS-CPS participants for contributing data to advance public health research
-Course Instructor: [Professor Name] for project guidance
 
 
-📚 References
-Key papers using TUS-CPS 2010-2011 longitudinal cohort:
+Key References
 
 Kalkhoran S, et al. (2016). E-cigarette use and smoking reduction or cessation in the 2010/2011 TUS-CPS longitudinal cohort. BMC Public Health, 16(1), 1105.
 Pierce JP, et al. (2018). Effectiveness of Pharmaceutical Smoking Cessation Aids in a Nationally Representative Cohort of American Smokers. JNCI: Journal of the National Cancer Institute, 110(6), 581-587.
 Hughes JR, et al. (2003). Measures of abstinence in clinical trials: issues and recommendations. Nicotine & Tobacco Research, 5(1), 13-25.
 
 
-📄 License
-This project is for educational purposes as part of a university data mining course. Data is publicly available from NCI. Code is available under MIT License.
-
-📞 Contact
-For questions about this project, please contact:
-
-Ananda Downing: [ananda.email@university.edu]
-Angel Nivar: [angel.email@university.edu]
-
-
-🔗 Useful Links
+Important Links
 
 TUS-CPS Official Website
 TUS-CPS 2010-2011 Data Download
@@ -293,6 +258,12 @@ Scikit-learn Documentation
 XGBoost Documentation
 
 
-Disclaimer: This model is for educational and research purposes only and does not constitute medical advice. Individuals seeking to quit smoking should consult qualified healthcare professionals.
+License
+This project is for educational purposes as part of a university data mining course. Data is publicly available from NCI. Code is available under MIT License.
 
+Contact
+For questions about this project:
+
+
+Disclaimer: This model is for educational and research purposes only and does not constitute medical advice. Individuals seeking to quit smoking should consult qualified healthcare professionals.
 Last Updated: October 2025
