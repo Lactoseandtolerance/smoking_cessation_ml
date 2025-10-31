@@ -5,6 +5,7 @@ pandas
 # Data processing & I/O
 openpyxl
 pyarrow
+pdfplumber
 pyreadstat
 
 # Visualization
