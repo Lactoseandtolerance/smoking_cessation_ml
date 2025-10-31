@@ -1,6 +1,29 @@
+# Core libraries
 numpy
 pandas
-scikit-learn
+
+# Data processing & I/O
+openpyxl
+pyarrow
+pyreadstat
+
+# Visualization
+matplotlib
+plotly
+seaborn
+
+# Machine learning
+imbalanced-learn
 joblib
-pytest
+scikit-learn
+xgboost
+
+# Model interpretation
+shap
+
+# Dashboard
+streamlit
+
+# Development / testing
 jupyter
+pytest
