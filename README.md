@@ -235,9 +235,36 @@ Angel Nivar
 Focus: Data preprocessing, Random Forest, model evaluation, dashboard development
 Email: angel.email@university.edu
 
-Acknowledgments
+ pip install -r requirements.txt -c constraints.txt
 
 National Cancer Institute (NCI) for providing publicly accessible TUS-CPS data
+ 
+Notes on reproducible installs
+-----------------------------
+- This repository includes a pinned constraints file at `constraints.txt` created from a known-good environment.
+- To install reproducibly, create and activate a virtualenv and run:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt -c constraints.txt
+```
+
+Platform notes:
+- On macOS, `xgboost` may require the OpenMP runtime. If you see errors importing `xgboost`, install libomp:
+
+```bash
+brew install libomp
+```
+
+Regenerating constraints
+-----------------------
+- To regenerate `constraints.txt` after updating `requirements.txt`, create a clean venv, install `requirements.txt`, and run:
+
+```bash
+pip freeze --exclude-editable > constraints.txt
+```
+
 US Census Bureau for conducting the Current Population Survey
 TUS-CPS participants for contributing data to advance public health research
 
