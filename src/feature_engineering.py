@@ -105,6 +105,30 @@ def _extract_numeric_code(series):
         return pd.to_numeric(series, errors='coerce')
 
 
+def _wave_aware_pick(df: pd.DataFrame, baseline_wave_col: str, candidates_per_wave: dict[int, list[str]]):
+    """Select values row-wise from wave-specific columns based on baseline_wave.
+
+    Args:
+        df: DataFrame containing pooled transitions and raw wave columns
+        baseline_wave_col: column indicating the baseline wave (int 1..5)
+        candidates_per_wave: mapping wave -> ordered list of candidate column names
+
+    Returns:
+        pd.Series of values assembled across waves (dtype object, to be coerced later)
+    """
+    s = pd.Series(np.nan, index=df.index)
+    if baseline_wave_col not in df.columns:
+        return s
+    for w, cands in candidates_per_wave.items():
+        mask = df[baseline_wave_col] == w
+        if not mask.any():
+            continue
+        for col in cands:
+            if col in df.columns:
+                s.loc[mask] = df.loc[mask, col]
+                break
+    return s
+
 
 def _normalize_race_ethnicity(df, race_col=None, hisp_col=None, *, race_map=None, hisp_yes_values=(1,), collapse_to_other=('Asian',)):
     """Derive a 4-level race/ethnicity label and one-hot dummies.
@@ -189,40 +213,132 @@ def map_from_codebook(
         return _replace_path_missing(s) if recode_missing else s
 
     # ------------------------- Demographics -------------------------
-    # age (handle both numeric and categorical)
-    if 'age' not in df.columns:
-        age_candidates = codebook_overrides.get('age_candidates') or VARIABLE_CANDIDATES['age']
-        col = codebook_overrides.get('age') or _first_present_column(df, age_candidates)
-        if col is not None:
-            age_series = clean(df[col])
-            # Extract numeric code from categorical strings
-            age_numeric = _extract_numeric_code(age_series)
-            # Check if it's categorical (like PATH's AGECAT7)
-            if 'AGECAT' in str(col).upper():
-                # Map age categories to midpoints
-                age_mapping = {
-                    1: 21,   # 18-24
-                    2: 29.5, # 25-34
-                    3: 39.5, # 35-44
-                    4: 49.5, # 45-54
-                    5: 59.5, # 55-64
-                    6: 69.5, # 65-74
-                    7: 80,   # 75+
-                }
-                df['age'] = age_numeric.map(age_mapping)
-            else:
-                # Direct numeric age
-                df['age'] = age_numeric
+    # Wave-aware mapping when pooled data contains baseline_wave
+    if 'baseline_wave' in df.columns:
+        # AGE: prefer numeric age if available; else map AGECAT7 to midpoints
+        age_num = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_AGE'] for w in range(1, 6)}
+        )
+        age_cat = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_AGECAT7'] for w in range(1, 6)}
+        )
+        age_cat6 = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_AGECAT6'] for w in range(1, 6)}
+        )
+        age_num = _extract_numeric_code(clean(age_num))
+        age_cat_codes = _extract_numeric_code(clean(age_cat))
+        age_cat6_codes = _extract_numeric_code(clean(age_cat6))
+        age_cat_map = {
+            1: 21,   # 18-24
+            2: 29.5, # 25-34
+            3: 39.5, # 35-44
+            4: 49.5, # 45-54
+            5: 59.5, # 55-64
+            6: 69.5, # 65-74
+            7: 80,   # 75+
+        }
+        age_from_cat = age_cat_codes.map(age_cat_map)
+        age_cat6_map = {
+            1: 21,   # 18-24
+            2: 29.5, # 25-34
+            3: 39.5, # 35-44
+            4: 49.5, # 45-54
+            5: 59.5, # 55-64
+            6: 69.5, # 65+
+        }
+        age_from_cat6 = age_cat6_codes.map(age_cat6_map)
+        df['age'] = age_num.where(age_num.notna(), age_from_cat)
+        df['age'] = df['age'].where(df['age'].notna(), age_from_cat6)
 
-    # sex (normalize to Male/Female strings if coded 1/2)
-    if 'sex' not in df.columns:
-        sex_candidates = codebook_overrides.get('sex_candidates') or VARIABLE_CANDIDATES['sex']
-        col = codebook_overrides.get('sex') or _first_present_column(df, sex_candidates)
-        if col is not None:
-            s = clean(df[col])
-            # Extract numeric code and map 1=Male, 2=Female
-            sex_numeric = _extract_numeric_code(s)
-            df['sex'] = sex_numeric.map({1: 'Male', 2: 'Female'})
+        # SEX: 1=Male, 2=Female
+        sex_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_SEX'] for w in range(1, 6)}
+        )
+        sex_codes = _extract_numeric_code(clean(sex_wave))
+        df['sex'] = sex_codes.map({1: 'Male', 2: 'Female'})
+
+        # INCOME: try both POVCAT3 and A_INCOME
+        income_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_POVCAT3', f'R0{w}R_A_INCOME'] for w in range(1, 6)}
+        )
+        df['income'] = _extract_numeric_code(clean(income_wave))
+
+        # RACE / HISPANIC
+        race_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_RACECAT3', f'R0{w}R_A_RACE'] for w in range(1, 6)}
+        )
+        hisp_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_HISP'] for w in range(1, 6)}
+        )
+        # Stash temporarily to reuse existing normalization function
+        df['__race_code_waveaware'] = race_wave
+        df['__hisp_code_waveaware'] = hisp_wave
+        race_label, dummies = _normalize_race_ethnicity(
+            df,
+            race_col='__race_code_waveaware',
+            hisp_col='__hisp_code_waveaware',
+            race_map=codebook_overrides.get('race_map') if codebook_overrides else None,
+            hisp_yes_values=tuple(codebook_overrides.get('hisp_yes_values', (1,))) if codebook_overrides else (1,),
+            collapse_to_other=tuple(codebook_overrides.get('race_collapse_to_other', ('Asian',))) if codebook_overrides else ('Asian',)
+        )
+        df['race_ethnicity'] = race_label
+        for k, v in dummies.items():
+            df[k] = v
+
+        # CPD and TTFC (numeric)
+        cpd_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_PERDAY_P30D_CIGS'] for w in range(1, 6)}
+        )
+        df['cpd'] = pd.to_numeric(clean(cpd_wave), errors='coerce')
+
+        ttfc_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_MINFIRST_CIGS'] for w in range(1, 6)}
+        )
+        df['ttfc_minutes'] = pd.to_numeric(clean(ttfc_wave), errors='coerce')
+    else:
+        # age (handle both numeric and categorical) for single-wave frames
+        if 'age' not in df.columns:
+            age_candidates = codebook_overrides.get('age_candidates') or VARIABLE_CANDIDATES['age']
+            col = codebook_overrides.get('age') or _first_present_column(df, age_candidates)
+            if col is not None:
+                age_series = clean(df[col])
+                # Extract numeric code from categorical strings
+                age_numeric = _extract_numeric_code(age_series)
+                # Check if it's categorical (like PATH's AGECAT7)
+                if 'AGECAT' in str(col).upper():
+                    # Map age categories to midpoints
+                    age_mapping = {
+                        1: 21,   # 18-24
+                        2: 29.5, # 25-34
+                        3: 39.5, # 35-44
+                        4: 49.5, # 45-54
+                        5: 59.5, # 55-64
+                        6: 69.5, # 65-74
+                        7: 80,   # 75+
+                    }
+                    df['age'] = age_numeric.map(age_mapping)
+                else:
+                    # Direct numeric age
+                    df['age'] = age_numeric
+
+        # sex (normalize to Male/Female strings if coded 1/2)
+        if 'sex' not in df.columns:
+            sex_candidates = codebook_overrides.get('sex_candidates') or VARIABLE_CANDIDATES['sex']
+            col = codebook_overrides.get('sex') or _first_present_column(df, sex_candidates)
+            if col is not None:
+                s = clean(df[col])
+                # Extract numeric code and map 1=Male, 2=Female
+                sex_numeric = _extract_numeric_code(s)
+                df['sex'] = sex_numeric.map({1: 'Male', 2: 'Female'})
 
     # education_cat (derive from either pre-made category or numeric education code)
     if 'education_cat' not in df.columns:
@@ -246,47 +362,49 @@ def map_from_codebook(
                 df['education_cat'] = edu_code.map(edu_map)
 
     # income (prefer raw numeric if available; else ordinal proxy)
-    if 'income' not in df.columns:
-        income_candidates = codebook_overrides.get('income_candidates') or VARIABLE_CANDIDATES['income']
-        col = codebook_overrides.get('income') or _first_present_column(df, income_candidates)
-        if col is not None:
-            s = clean(df[col])
-            # Extract numeric code from categorical strings
-            income_numeric = _extract_numeric_code(s)
-            df['income'] = income_numeric
+        if 'income' not in df.columns:
+            income_candidates = codebook_overrides.get('income_candidates') or VARIABLE_CANDIDATES['income']
+            col = codebook_overrides.get('income') or _first_present_column(df, income_candidates)
+            if col is not None:
+                s = clean(df[col])
+                # Extract numeric code from categorical strings
+                income_numeric = _extract_numeric_code(s)
+                df['income'] = income_numeric
 
     # Race/Ethnicity: create race_ethnicity label and one-hot dummies
-    race_col = codebook_overrides.get('race') if codebook_overrides else None
-    if race_col is None:
-        race_col = _first_present_column(df, VARIABLE_CANDIDATES['race'])
-    hisp_col = codebook_overrides.get('hispanic') if codebook_overrides else None
-    if hisp_col is None:
-        hisp_col = _first_present_column(df, VARIABLE_CANDIDATES['hispanic'])
-    if (race_col is not None or hisp_col is not None) and 'race_ethnicity' not in df.columns:
-        race_label, dummies = _normalize_race_ethnicity(
-            df, race_col, hisp_col,
-            race_map=codebook_overrides.get('race_map') if codebook_overrides else None,
-            hisp_yes_values=tuple(codebook_overrides.get('hisp_yes_values', (1,))) if codebook_overrides else (1,),
-            collapse_to_other=tuple(codebook_overrides.get('race_collapse_to_other', ('Asian',))) if codebook_overrides else ('Asian',)
-        )
-        df['race_ethnicity'] = race_label
-        for k, v in dummies.items():
-            df[k] = v
+    if 'baseline_wave' not in df.columns:
+        race_col = codebook_overrides.get('race') if codebook_overrides else None
+        if race_col is None:
+            race_col = _first_present_column(df, VARIABLE_CANDIDATES['race'])
+        hisp_col = codebook_overrides.get('hispanic') if codebook_overrides else None
+        if hisp_col is None:
+            hisp_col = _first_present_column(df, VARIABLE_CANDIDATES['hispanic'])
+        if (race_col is not None or hisp_col is not None) and 'race_ethnicity' not in df.columns:
+            race_label, dummies = _normalize_race_ethnicity(
+                df, race_col, hisp_col,
+                race_map=codebook_overrides.get('race_map') if codebook_overrides else None,
+                hisp_yes_values=tuple(codebook_overrides.get('hisp_yes_values', (1,))) if codebook_overrides else (1,),
+                collapse_to_other=tuple(codebook_overrides.get('race_collapse_to_other', ('Asian',))) if codebook_overrides else ('Asian',)
+            )
+            df['race_ethnicity'] = race_label
+            for k, v in dummies.items():
+                df[k] = v
 
     # ------------------ Core smoking inputs (if needed) ------------------
-    # cpd
-    if 'cpd' not in df.columns:
-        cpd_candidates = codebook_overrides.get('cpd_candidates') or VARIABLE_CANDIDATES['cpd']
-        col = codebook_overrides.get('cpd') or _first_present_column(df, cpd_candidates)
-        if col is not None:
-            df['cpd'] = pd.to_numeric(clean(df[col]), errors='coerce')
+    if 'baseline_wave' not in df.columns:
+        # cpd
+        if 'cpd' not in df.columns:
+            cpd_candidates = codebook_overrides.get('cpd_candidates') or VARIABLE_CANDIDATES['cpd']
+            col = codebook_overrides.get('cpd') or _first_present_column(df, cpd_candidates)
+            if col is not None:
+                df['cpd'] = pd.to_numeric(clean(df[col]), errors='coerce')
 
-    # ttfc_minutes
-    if 'ttfc_minutes' not in df.columns:
-        ttfc_candidates = codebook_overrides.get('ttfc_minutes_candidates') or VARIABLE_CANDIDATES['ttfc_minutes']
-        col = codebook_overrides.get('ttfc_minutes') or _first_present_column(df, ttfc_candidates)
-        if col is not None:
-            df['ttfc_minutes'] = pd.to_numeric(clean(df[col]), errors='coerce')
+        # ttfc_minutes
+        if 'ttfc_minutes' not in df.columns:
+            ttfc_candidates = codebook_overrides.get('ttfc_minutes_candidates') or VARIABLE_CANDIDATES['ttfc_minutes']
+            col = codebook_overrides.get('ttfc_minutes') or _first_present_column(df, ttfc_candidates)
+            if col is not None:
+                df['ttfc_minutes'] = pd.to_numeric(clean(df[col]), errors='coerce')
 
     # --------------------- Cessation methods (binary) ---------------------
     # Helper to coerce a method column into 0/1 where 1 means used
@@ -353,20 +471,25 @@ def engineer_demographic_features(df):
     Returns:
         pd.DataFrame: Dataset with demographic features added
     """
-    # Age cohorts
-    df['age_cohort'] = pd.cut(
-        df['age'], 
-        bins=[18, 25, 35, 45, 55, 65, 100],
-        labels=['18-24', '25-34', '35-44', '45-54', '55-64', '65+']
-    )
-    df['age_young'] = (df['age'] < 35).astype(int)
+    # Age cohorts (guard when age not available)
+    if 'age' in df.columns:
+        df['age_cohort'] = pd.cut(
+            df['age'], 
+            bins=[18, 25, 35, 45, 55, 65, 100],
+            labels=['18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+        )
+        df['age_young'] = (df['age'] < 35).astype(int)
+    else:
+        df['age_cohort'] = pd.Series(pd.Categorical([np.nan] * len(df), categories=['18-24','25-34','35-44','45-54','55-64','65+']))
+        df['age_young'] = 0
     
     # Gender (robust to 'Female' string or numeric 2)
+    sex_series = df['sex'] if 'sex' in df.columns else pd.Series(np.nan, index=df.index)
     female_mask = (
-        (df.get('sex').astype(str).str.lower() == 'female') |
-        (pd.to_numeric(df.get('sex'), errors='coerce') == 2)
+        (sex_series.astype(str).str.lower() == 'female') |
+        (pd.to_numeric(sex_series, errors='coerce') == 2)
     )
-    df['female'] = female_mask.astype(int)
+    df['female'] = female_mask.fillna(False).astype(int)
     
     # Education (handle missing education_cat column)
     if 'education_cat' in df.columns:
@@ -374,8 +497,9 @@ def engineer_demographic_features(df):
     else:
         df['college_degree'] = 0  # Default to 0 when education not available
     
-    # Income
-    income_series = pd.to_numeric(df.get('income'), errors='coerce')
+    # Income (guard missing)
+    raw_income = df['income'] if 'income' in df.columns else pd.Series(np.nan, index=df.index)
+    income_series = pd.to_numeric(raw_income, errors='coerce')
     if income_series.notna().sum() > 0:
         income_median = income_series.median()
         df['high_income'] = (income_series > income_median).astype(int)
