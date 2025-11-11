@@ -81,10 +81,14 @@ def train_logistic_regression(X_train, y_train, X_val, y_val):
     Returns:
         Tuple of (model, scaler, predictions, probabilities)
     """
+    # Fill NaN values with column means
+    X_train_filled = X_train.fillna(X_train.mean())
+    X_val_filled = X_val.fillna(X_train.mean())  # Use training means
+    
     # Scale features
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_val_scaled = scaler.transform(X_val)
+    X_train_scaled = scaler.fit_transform(X_train_filled)
+    X_val_scaled = scaler.transform(X_val_filled)
     
     # Train model with class weighting
     lr = LogisticRegression(
@@ -114,6 +118,10 @@ def train_random_forest(X_train, y_train, X_val, y_val):
     Returns:
         Tuple of (model, predictions, probabilities)
     """
+    # Fill NaN values with column means
+    X_train_filled = X_train.fillna(X_train.mean())
+    X_val_filled = X_val.fillna(X_train.mean())
+    
     # Train model with class weighting
     rf = RandomForestClassifier(
         n_estimators=100,
@@ -125,11 +133,11 @@ def train_random_forest(X_train, y_train, X_val, y_val):
         n_jobs=-1
     )
     
-    rf.fit(X_train, y_train)
+    rf.fit(X_train_filled, y_train)
     
     # Predict on validation set
-    y_val_pred_proba = rf.predict_proba(X_val)[:, 1]
-    y_val_pred = rf.predict(X_val)
+    y_val_pred_proba = rf.predict_proba(X_val_filled)[:, 1]
+    y_val_pred = rf.predict(X_val_filled)
     
     return rf, y_val_pred, y_val_pred_proba
 
@@ -145,6 +153,10 @@ def train_xgboost(X_train, y_train, X_val, y_val):
     Returns:
         Tuple of (model, predictions, probabilities)
     """
+    # Fill NaN values with column means
+    X_train_filled = X_train.fillna(X_train.mean())
+    X_val_filled = X_val.fillna(X_train.mean())
+    
     # Calculate scale_pos_weight for class imbalance
     scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
     print(f"Scale pos weight: {scale_pos_weight:.2f}")
@@ -162,14 +174,14 @@ def train_xgboost(X_train, y_train, X_val, y_val):
     
     # Fit with early stopping
     xgb_model.fit(
-        X_train, y_train,
-        eval_set=[(X_val, y_val)],
+        X_train_filled, y_train,
+        eval_set=[(X_val_filled, y_val)],
         verbose=False
     )
     
     # Predict on validation set
-    y_val_pred_proba = xgb_model.predict_proba(X_val)[:, 1]
-    y_val_pred = xgb_model.predict(X_val)
+    y_val_pred_proba = xgb_model.predict_proba(X_val_filled)[:, 1]
+    y_val_pred = xgb_model.predict(X_val_filled)
     
     return xgb_model, y_val_pred, y_val_pred_proba
 

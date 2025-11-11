@@ -92,6 +92,7 @@ streamlit run dashboard/app.py
 - **Design:** Pooled person-period dataset across wave transitions (1→2, 2→3, 3→4, 4→5)
 - **Outcome:** 30-day smoking abstinence after quit attempt
 - **Features:** 25-35 engineered features covering nicotine dependence, demographics, cessation methods, quit history
+   - Phase 3 adds dynamic codebook-driven mapping (see Feature Engineering Workflow below)
 
 ### Models
 - **Logistic Regression** (interpretable baseline)
@@ -143,6 +144,57 @@ A Multi-Model Approach with PATH Study Data. [Course/Institution].
 [Your names and contact information]
 
 ## Acknowledgments
+## Feature Engineering Workflow (Phase 3)
+
+Phase 3 introduces a two-layer feature engineering approach to decouple raw PATH Study wave-specific variable names from canonical modeling features.
+
+1. **Mapping Layer (`map_from_codebook`)**
+   - Accepts the raw DataFrame and optional `codebook_overrides` dict with explicit variable name mappings.
+   - Searches for candidate columns using a centralized `VARIABLE_CANDIDATES` dictionary in `src/feature_engineering.py` when overrides are not supplied.
+   - Normalizes missing codes (negative PATH values) to `NaN` if `recode_missing=True`.
+   - Derives canonical columns: `age`, `sex`, `education_cat`, `income`, `race_ethnicity` (+ one-hot race dummies), `cpd`, `ttfc_minutes`, and cessation method indicators.
+
+2. **Feature Layer (`engineer_*_features`)**
+   - Assumes canonical columns exist; builds dependence, demographic, cessation method, history, motivation, environmental, and interaction features.
+   - Robust to partial availability (uses `df.get('col', default)` for method indicators).
+
+3. **Unified Entry Point (`engineer_all_features`)**
+   - New signature: `engineer_all_features(df, codebook_overrides=None, recode_missing=True)`.
+   - Calls mapping layer first, then sequential feature builders.
+
+### Supplying Overrides
+```python
+codebook_overrides = {
+    'age': 'R01R_A_AGE',          # Example PATH variable names
+    'sex': 'R01R_A_SEX',
+    'education_code': 'R01R_A_EDUC',
+    'income': 'R01R_A_INCOME',
+    'cpd': 'R01R_A_PERDAY_P30D_CIGS',
+    'ttfc_minutes': 'R01R_A_MINFIRST_CIGS',
+    'race': 'R01R_A_RACECAT',     # Replace with correct codebook variable
+    'hispanic': 'R01R_A_HISP',
+    'nrt_any': 'R01R_A_PST12M_LSTQUIT_ECIG_NRT',    # Placeholder examples
+    'varenicline': 'R01R_A_PST12M_LSTQUIT_ECIG_RX', # Confirm variable names
+    # Add bupropion, counseling, quitline when identified
+}
+df_feats = engineer_all_features(raw_df, codebook_overrides=codebook_overrides)
+```
+
+### Race/Ethnicity Handling
+Currently derives a simplified 4-level scheme: `White`, `Black`, `Hispanic`, `Other` with dummies:
+`race_white`, `race_black`, `race_hispanic`, `race_other`. Update `_normalize_race_ethnicity` once detailed PATH race coding is confirmed.
+
+### Adding New Variables
+Extend `VARIABLE_CANDIDATES` with new raw names; feature engineering will pick them up automatically when present.
+
+### Testing
+See `tests/test_feature_engineering.py` (added in Phase 3) for a synthetic DataFrame validation of mapping + derived features.
+
+### Next Refinements
+- Confirm and finalize actual PATH variable names for cessation methods and race/ethnicity.
+- Document derivation logic for education levels and income ordinal mapping.
+- Add SHAP-friendly feature grouping metadata.
+
 
 - PATH Study Team and ICPSR for data access
 - [Course instructor name]
