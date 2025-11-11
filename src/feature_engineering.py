@@ -12,7 +12,12 @@ import numpy as np
 # Unified list of PATH missing codes observed in documentation
 PATH_MISSING_CODES = [
     -9, -8, -7, -4, -1,           # General public-use missing codes (short list)
-    -99988, -99977, -99955, -99911, -97777  # Extended codes seen in user guide
+    -99999,                        # Inconsistent/missing value
+    -99988,                        # Don't know
+    -99977,                        # Refused
+    -99955,                        # Improbable/inconsistent value
+    -99911,                        # Skip pattern (legitimate skip)
+    -97777                         # Other missing
 ]
 
 
@@ -304,6 +309,63 @@ def map_from_codebook(
             {w: [f'R0{w}R_A_MINFIRST_CIGS'] for w in range(1, 6)}
         )
         df['ttfc_minutes'] = pd.to_numeric(clean(ttfc_wave), errors='coerce')
+
+        # QUIT HISTORY: Last quit duration (minutes) and longest quit duration
+        lastquit_dur_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_PST12M_LSTQUIT_DUR'] for w in range(1, 6)}
+        )
+        longquit_dur_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_PST12M_LNQUIT_DUR'] for w in range(1, 6)}
+        )
+        # Convert from minutes to days for longest_abstinence_days
+        lastquit_minutes = pd.to_numeric(clean(lastquit_dur_wave), errors='coerce')
+        longquit_minutes = pd.to_numeric(clean(longquit_dur_wave), errors='coerce')
+        df['longest_abstinence_days'] = (longquit_minutes / (60 * 24)).where(
+            longquit_minutes.notna(),
+            lastquit_minutes / (60 * 24)
+        ).fillna(0)
+
+        # CESSATION METHODS: NRT and prescription medications
+        # These variables contain DURATION in days (positive = used, -99911 = skip/not used)
+        nrt_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_PST12M_LSTQUIT_NRT', f'R0{w}R_A_PST12M_LSTQUIT_ECIG_NRT'] for w in range(1, 6)}
+        )
+        rx_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_PST12M_LSTQUIT_RX', f'R0{w}R_A_PST12M_LSTQUIT_ECIG_RX'] for w in range(1, 6)}
+        )
+        nrt_days = pd.to_numeric(clean(nrt_wave), errors='coerce')
+        rx_days = pd.to_numeric(clean(rx_wave), errors='coerce')
+        # Used = positive values (duration >0 days)
+        df['nrt_any'] = (nrt_days > 0).astype(int)
+        df['varenicline'] = (rx_days > 0).astype(int)  # Aggregated prescription meds
+
+        # HOUSEHOLD ENVIRONMENT
+        hhsize_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_HHSIZE5'] for w in range(1, 6)}
+        )
+        hhyouth_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_HHYOUTH'] for w in range(1, 6)}
+        )
+        hhsize_codes = _extract_numeric_code(clean(hhsize_wave))
+        hhyouth_codes = _extract_numeric_code(clean(hhyouth_wave))
+        # Derive num_household_smokers as proxy: assume 1 smoker per household with youth, 
+        # or estimate based on household size (conservative: 1 if size >=3, 0 otherwise)
+        df['num_household_smokers'] = ((hhsize_codes >= 3) | (hhyouth_codes == 1)).astype(int)
+
+        # INCOME/SES proxy for education: POVCAT3 levels 2-3 (>100% poverty) suggest higher SES
+        # Use existing income column derived from POVCAT3 to estimate college_degree proxy
+        if 'income' in df.columns:
+            income_codes = pd.to_numeric(df['income'], errors='coerce')
+            # POVCAT3: 3 = ≥200% poverty line, strong SES indicator
+            df['education_code_proxy'] = (income_codes >= 3).astype(int)
+        else:
+            df['education_code_proxy'] = 0
     else:
         # age (handle both numeric and categorical) for single-wave frames
         if 'age' not in df.columns:
@@ -491,9 +553,12 @@ def engineer_demographic_features(df):
     )
     df['female'] = female_mask.fillna(False).astype(int)
     
-    # Education (handle missing education_cat column)
+    # Education (handle missing education_cat column, use SES proxy if available)
     if 'education_cat' in df.columns:
         df['college_degree'] = (df['education_cat'] == 'College+').astype(int)
+    elif 'education_code_proxy' in df.columns:
+        # Use income-based SES proxy (high income correlates with higher education)
+        df['college_degree'] = df['education_code_proxy']
     else:
         df['college_degree'] = 0  # Default to 0 when education not available
     
@@ -521,14 +586,23 @@ def engineer_cessation_method_features(df):
     Returns:
         pd.DataFrame: Dataset with method features added
     """
-    # NRT products
-    df['used_nrt'] = _series_or_default(df, 'nrt_any', 0).fillna(0).astype(int)
+    # NRT products - use nrt_any if already populated from map_from_codebook
+    if 'nrt_any' in df.columns and df['nrt_any'].sum() > 0:
+        df['used_nrt'] = df['nrt_any'].fillna(0).astype(int)
+    else:
+        df['used_nrt'] = _series_or_default(df, 'nrt_any', 0).fillna(0).astype(int)
+    
+    # Individual NRT products (may remain zero if not in PATH data)
     df['used_patch'] = _series_or_default(df, 'nrt_patch', 0).fillna(0).astype(int)
     df['used_gum'] = _series_or_default(df, 'nrt_gum', 0).fillna(0).astype(int)
     df['used_lozenge'] = _series_or_default(df, 'nrt_lozenge', 0).fillna(0).astype(int)
     
-    # Prescription medications
-    df['used_varenicline'] = _series_or_default(df, 'varenicline', 0).fillna(0).astype(int)
+    # Prescription medications - use varenicline if already populated
+    if 'varenicline' in df.columns and df['varenicline'].sum() > 0:
+        df['used_varenicline'] = df['varenicline'].fillna(0).astype(int)
+    else:
+        df['used_varenicline'] = _series_or_default(df, 'varenicline', 0).fillna(0).astype(int)
+    
     df['used_bupropion'] = _series_or_default(df, 'bupropion', 0).fillna(0).astype(int)
     df['used_any_medication'] = (
         (df['used_varenicline'] == 1) | (df['used_bupropion'] == 1)
@@ -573,7 +647,12 @@ def engineer_quit_history_features(df):
     """
     df['num_previous_quits'] = _series_or_default(df, 'lifetime_quit_attempts', 0).fillna(0)
     df['previous_quit_success'] = (df['num_previous_quits'] > 0).astype(int)
-    df['longest_quit_duration'] = _series_or_default(df, 'longest_abstinence_days', 0).fillna(0)
+    
+    # Use longest_abstinence_days if already populated (from map_from_codebook)
+    if 'longest_abstinence_days' in df.columns:
+        df['longest_quit_duration'] = pd.to_numeric(df['longest_abstinence_days'], errors='coerce').fillna(0)
+    else:
+        df['longest_quit_duration'] = _series_or_default(df, 'longest_abstinence_days', 0).fillna(0)
     
     return df
 
@@ -605,7 +684,12 @@ def engineer_environmental_features(df):
     Returns:
         pd.DataFrame: Dataset with environmental features added
     """
-    df['household_smokers'] = (pd.to_numeric(_series_or_default(df, 'num_household_smokers', 0), errors='coerce') > 0).astype(int)
+    # Use num_household_smokers if already populated (from map_from_codebook)
+    if 'num_household_smokers' in df.columns:
+        df['household_smokers'] = (pd.to_numeric(df['num_household_smokers'], errors='coerce') > 0).astype(int)
+    else:
+        df['household_smokers'] = (pd.to_numeric(_series_or_default(df, 'num_household_smokers', 0), errors='coerce') > 0).astype(int)
+    
     df['smokefree_home'] = _series_or_default(df, 'home_smoking_rules', 0).fillna(0).astype(int)
     df['workplace_smokefree'] = _series_or_default(df, 'workplace_policy', 0).fillna(0).astype(int)
     

@@ -80,9 +80,17 @@ def create_transitions(wave_t_data, wave_t1_data, wave_t, wave_t1):
         'PERSONID',
         # Demographics
         f'R0{wave_t}R_A_AGE', f'R0{wave_t}R_A_AGECAT7', f'R0{wave_t}R_A_AGECAT6', f'R0{wave_t}R_A_SEX',
-        f'R0{wave_t}R_POVCAT3', f'R0{wave_t}R_A_INCOME', f'R0{wave_t}R_A_RACECAT3', f'R0{wave_t}R_A_RACE', f'R0{wave_t}R_A_HISP',
+        f'R0{wave_t}R_POVCAT3', f'R0{wave_t}R_POVCAT2', f'R0{wave_t}R_A_INCOME', 
+        f'R0{wave_t}R_A_RACECAT3', f'R0{wave_t}R_A_RACE', f'R0{wave_t}R_A_HISP',
         # Core smoking behavior
-        f'R0{wave_t}R_A_PERDAY_P30D_CIGS', f'R0{wave_t}R_A_MINFIRST_CIGS'
+        f'R0{wave_t}R_A_PERDAY_P30D_CIGS', f'R0{wave_t}R_A_MINFIRST_CIGS',
+        # Quit history and duration
+        f'R0{wave_t}R_A_PST12M_LSTQUIT_DUR', f'R0{wave_t}R_A_PST12M_LNQUIT_DUR',
+        # Cessation methods
+        f'R0{wave_t}R_A_PST12M_LSTQUIT_NRT', f'R0{wave_t}R_A_PST12M_LSTQUIT_RX',
+        f'R0{wave_t}R_A_PST12M_LSTQUIT_ECIG_NRT', f'R0{wave_t}R_A_PST12M_LSTQUIT_ECIG_RX',
+        # Household environment
+        f'R0{wave_t}R_HHSIZE5', f'R0{wave_t}R_HHYOUTH',
     ]
     existing_baseline_cols = [c for c in baseline_cols if c in smokers_t.columns]
 

@@ -10,6 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
 import joblib
+from pathlib import Path
 
 
 def split_data_by_person(pooled_data, feature_cols, test_size=0.4, val_size=0.5, random_state=42):
@@ -144,44 +145,57 @@ def train_random_forest(X_train, y_train, X_val, y_val):
 
 def train_xgboost(X_train, y_train, X_val, y_val):
     """
-    Train XGBoost with class weighting.
+    Train XGBoost with native NaN handling.
+    
+    XGBoost can handle missing values (NaN) natively by learning the optimal
+    direction for missing values at each split. This is superior to simple
+    imputation as it allows the model to learn patterns in missingness.
     
     Args:
-        X_train, y_train: Training data
-        X_val, y_val: Validation data
+        X_train, y_train: Training data (can contain NaN)
+        X_val, y_val: Validation data (can contain NaN)
         
     Returns:
         Tuple of (model, predictions, probabilities)
     """
-    # Fill NaN values with column means
-    X_train_filled = X_train.fillna(X_train.mean())
-    X_val_filled = X_val.fillna(X_train.mean())
+    # NO imputation needed - XGBoost handles NaN natively!
+    # Just ensure data is numeric (already done in feature engineering)
     
     # Calculate scale_pos_weight for class imbalance
     scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
     print(f"Scale pos weight: {scale_pos_weight:.2f}")
     
-    # Train XGBoost
+    # Check for NaN in training data
+    nan_cols = X_train.columns[X_train.isna().any()].tolist()
+    if nan_cols:
+        print(f"Training with {len(nan_cols)} features containing NaN (XGBoost handles natively)")
+        print(f"  Top features with missing data:")
+        missing_pct = (X_train.isna().sum() / len(X_train) * 100).sort_values(ascending=False)
+        for col in missing_pct.head(5).index:
+            print(f"    • {col}: {missing_pct[col]:.1f}% missing")
+    
+    # Train XGBoost with native missing value handling
     xgb_model = xgb.XGBClassifier(
         n_estimators=100,
         max_depth=5,
         learning_rate=0.1,
         scale_pos_weight=scale_pos_weight,
+        missing=np.nan,  # Explicitly tell XGBoost that NaN means missing
         random_state=42,
         eval_metric='auc',
         early_stopping_rounds=10
     )
     
-    # Fit with early stopping
+    # Fit with early stopping - use raw data with NaN
     xgb_model.fit(
-        X_train_filled, y_train,
-        eval_set=[(X_val_filled, y_val)],
+        X_train, y_train,
+        eval_set=[(X_val, y_val)],
         verbose=False
     )
     
-    # Predict on validation set
-    y_val_pred_proba = xgb_model.predict_proba(X_val_filled)[:, 1]
-    y_val_pred = xgb_model.predict(X_val_filled)
+    # Predict on validation set - XGBoost handles NaN in predictions too
+    y_val_pred_proba = xgb_model.predict_proba(X_val)[:, 1]
+    y_val_pred = xgb_model.predict(X_val)
     
     return xgb_model, y_val_pred, y_val_pred_proba
 
@@ -195,10 +209,13 @@ def save_model(model, filepath, metadata=None):
         filepath: Path to save model
         metadata: Optional dictionary of metadata
     """
-    joblib.dump(model, filepath)
+    # Ensure path-like
+    path = Path(filepath)
+    joblib.dump(model, path)
     
     if metadata:
-        metadata_path = filepath.replace('.pkl', '_metadata.pkl')
+        # Build a sibling metadata file name safely using pathlib
+        metadata_path = path.with_name(path.stem + '_metadata.pkl')
         joblib.dump(metadata, metadata_path)
     
     print(f"Model saved to {filepath}")
