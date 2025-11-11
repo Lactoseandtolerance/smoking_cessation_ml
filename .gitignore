@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Data files (PATH Study data should not be committed)
+data/raw/*.csv
+data/raw/*.txt
+data/raw/*.zip
+data/raw/*.dta
+data/raw/*.sav
+*.sav
+*.dta
+
+# Models (too large for Git)
+models/*.pkl
+models/*.h5
+models/*.joblib
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports
+reports/*.pdf
+*.aux
+*.log
+*.out
