@@ -141,7 +141,7 @@ A Multi-Model Approach with PATH Study Data. [Course/Institution].
 
 ## Authors
 
-[Your names and contact information]
+Angel Nivar, Ananda Downing
 
 ## Acknowledgments
 ## Feature Engineering Workflow (Phase 3)

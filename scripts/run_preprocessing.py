@@ -215,6 +215,17 @@ def main():
     # Select features for modeling + preserve raw wave-specific columns for downstream re-engineering
     from src.feature_engineering import get_feature_list
     feature_cols = get_feature_list()
+
+    # Ensure that every expected feature column exists, even if entirely zeros.
+    # This guarantees a stable schema for downstream modeling and reporting.
+    missing_features = [f for f in feature_cols if f not in engineered.columns]
+    if missing_features:
+        print(f"\nAdding {len(missing_features)} missing feature column(s) with zeros:")
+        for col in missing_features:
+            engineered[col] = 0
+            print(f"  • {col}")
+
+    # Now compute availability strictly for logging/ordering; all should exist after the block above.
     available_features = [f for f in feature_cols if f in engineered.columns]
     
     print(f"\nFeature availability: {len(available_features)}/{len(feature_cols)}")
@@ -222,8 +233,8 @@ def main():
     # Preserve raw wave-specific demographic/dependence columns alongside engineered features
     raw_wave_cols = [c for c in engineered.columns if c.startswith('R0') and ('_A_' in c or 'POVCAT' in c)]
     
-    # Create final dataset with modeling columns + raw inputs
-    modeling_cols = ['PERSONID', 'baseline_wave', 'followup_wave', 'transition', 'quit_success'] + available_features + raw_wave_cols
+    # Create final dataset with modeling columns + raw inputs (keep ordering stable)
+    modeling_cols = ['PERSONID', 'baseline_wave', 'followup_wave', 'transition', 'quit_success'] + feature_cols + raw_wave_cols
     existing_cols = list(dict.fromkeys([c for c in modeling_cols if c in engineered.columns]))  # dedupe
     modeling_data = engineered[existing_cols].copy()
     

@@ -246,7 +246,11 @@ def calculate_disparities(fairness_df, metric='auc'):
         pd.DataFrame: Disparity statistics by group variable
     """
     disparities = []
-    
+
+    # Guard empty input
+    if fairness_df is None or len(fairness_df) == 0 or 'group_variable' not in fairness_df.columns:
+        return pd.DataFrame(columns=['group_variable', 'max', 'min', 'disparity', 'significant'])
+
     for group_var in fairness_df['group_variable'].unique():
         group_data = fairness_df[fairness_df['group_variable'] == group_var]
         
@@ -263,4 +267,6 @@ def calculate_disparities(fairness_df, metric='auc'):
                 'significant': disparity > 0.05  # Flag if > 0.05 difference
             })
     
+    if len(disparities) == 0:
+        return pd.DataFrame(columns=['group_variable', 'max', 'min', 'disparity', 'significant'])
     return pd.DataFrame(disparities).sort_values('disparity', ascending=False)

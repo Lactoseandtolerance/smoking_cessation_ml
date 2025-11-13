@@ -273,6 +273,14 @@ def map_from_codebook(
         )
         df['income'] = _extract_numeric_code(clean(income_wave))
 
+        # EDUCATION: wave-aware derived highest grade/level completed (6 levels)
+        # Use R0{w}R_A_AM0018 if available; fallback to R0{w}R_A_EDUC (if present)
+        edu_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}R_A_AM0018', f'R0{w}R_A_EDUC'] for w in range(1, 6)}
+        )
+        df['education_code'] = _extract_numeric_code(clean(edu_wave))
+
         # RACE / HISPANIC
         race_wave = _wave_aware_pick(
             df, 'baseline_wave',
@@ -342,6 +350,14 @@ def map_from_codebook(
         # Used = positive values (duration >0 days)
         df['nrt_any'] = (nrt_days > 0).astype(int)
         df['varenicline'] = (rx_days > 0).astype(int)  # Aggregated prescription meds
+
+        # COUNSELING (in-person, telephone or web) or self-help materials
+        counseling_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}_AN0215'] for w in range(1, 6)}
+        )
+        counseling_codes = _extract_numeric_code(clean(counseling_wave))
+        df['counseling'] = (counseling_codes == 1).astype(int)
 
         # HOUSEHOLD ENVIRONMENT
         hhsize_wave = _wave_aware_pick(
@@ -413,13 +429,17 @@ def map_from_codebook(
             edu_code_col = edu_code_col or _first_present_column(df, edu_candidates)
             if edu_code_col is not None:
                 edu_code = pd.to_numeric(clean(df[edu_code_col]), errors='coerce')
-                # Map common survey-style education codes to 4 bins used downstream
-                # This mapping is a placeholder; confirm with PATH codebook
+                # Map PATH education codes to 4 bins used downstream
+                # R0{w}R_A_AM0018: 1=<HS, 2=GED, 3=HS grad, 4=Some college/Associate, 5=Bachelor's, 6=Advanced degree
+                # Collapse into: <HS, HS (incl. GED), Some College, College+
                 edu_map = {
-                    1: '<HS', 2: '<HS',               # < High school
-                    3: 'HS', 4: 'HS',                 # High school/GED
-                    5: 'Some College', 6: 'Some College',  # Some college/Associate
-                    7: 'College+', 8: 'College+', 9: 'College+'  # Bachelor+
+                    1: '<HS',
+                    2: 'HS',  # GED treated as HS-equivalent
+                    3: 'HS',
+                    4: 'Some College',
+                    5: 'College+',
+                    6: 'College+',
+                    7: 'College+', 8: 'College+', 9: 'College+'  # If encountered in other waves
                 }
                 df['education_cat'] = edu_code.map(edu_map)
 

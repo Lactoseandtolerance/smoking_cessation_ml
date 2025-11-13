@@ -1,0 +1,247 @@
+# PATH Variable Mapping Tracker
+## Date: 2025-11-12
+
+This document tracks the mapping of PATH Study variables across waves for smoking cessation prediction.
+
+---
+
+## ✅ CONFIRMED MAPPED VARIABLES
+
+### Demographics
+
+| Feature | Wave 1 | Wave 2 | Wave 3 | Wave 4 | Wave 5 | Notes |
+|---------|--------|--------|--------|--------|--------|-------|
+| **Person ID** | PERSONID | PERSONID | PERSONID | PERSONID | PERSONID | ✅ Consistent |
+| **Age (numeric)** | R01R_A_AGE | R02R_A_AGE | R03R_A_AGE | R04R_A_AGE | R05R_A_AGE | ✅ Derived |
+| **Age (category 7)** | R01R_A_AGECAT7 | R02R_A_AGECAT7 | R03R_A_AGECAT7 | R04R_A_AGECAT7 | R05R_A_AGECAT7 | ✅ Consistent |
+| **Age (category 6)** | R01R_A_AGECAT6 | R02R_A_AGECAT6 | R03R_A_AGECAT6 | R04R_A_AGECAT6 | R05R_A_AGECAT6 | ✅ Fallback |
+| **Sex** | R01R_A_SEX | R02R_A_SEX | R03R_A_SEX | R04R_A_SEX | R05R_A_SEX | ✅ 1=Male, 2=Female |
+| **Race (3 categories)** | R01R_A_RACECAT3 | R02R_A_RACECAT3 | R03R_A_RACECAT3 | R04R_A_RACECAT3 | R05R_A_RACECAT3 | ✅ Consistent |
+| **Hispanic** | R01R_A_HISP | R02R_A_HISP | R03R_A_HISP | R04R_A_HISP | R05R_A_HISP | ✅ 1=Yes |
+| **Income (poverty category 3)** | R01R_POVCAT3 | R02R_POVCAT3 | R03R_POVCAT3 | R04R_POVCAT3 | R05R_POVCAT3 | ✅ 1-3 scale |
+| **Income (poverty category 2)** | R01R_POVCAT2 | R02R_POVCAT2 | R03R_POVCAT2 | R04R_POVCAT2 | R05R_POVCAT2 | ✅ 1-2 scale |
+
+### Smoking Behavior
+
+| Feature | Wave 1 | Wave 2 | Wave 3 | Wave 4 | Wave 5 | Notes |
+|---------|--------|--------|--------|--------|--------|-------|
+| **Current established smoker** | R01R_A_CUR_ESTD_CIGS | R02R_A_CUR_ESTD_CIGS | R03R_A_CUR_ESTD_CIGS | R04R_A_CUR_ESTD_CIGS | R05R_A_CUR_ESTD_CIGS | ✅ 1=Yes, 2=No |
+| **Every day smoker** | R01R_A_EDY_CIGS | R02R_A_EDY_CIGS | R03R_A_EDY_CIGS | R04R_A_EDY_CIGS | R05R_A_EDY_CIGS | ✅ 1=Yes, 2=No |
+| **Cigarettes per day (past 30d)** | R01R_A_PERDAY_P30D_CIGS | R02R_A_PERDAY_P30D_CIGS | R03R_A_PERDAY_P30D_CIGS | R04R_A_PERDAY_P30D_CIGS | R05R_A_PERDAY_P30D_CIGS | ✅ Numeric |
+| **Time to first cigarette** | R01R_A_MINFIRST_CIGS | R02R_A_MINFIRST_CIGS | R03R_A_MINFIRST_CIGS | R04R_A_MINFIRST_CIGS | R05R_A_MINFIRST_CIGS | ✅ Minutes |
+
+### Quit History
+
+| Feature | Wave 1 | Wave 2 | Wave 3 | Wave 4 | Wave 5 | Notes |
+|---------|--------|--------|--------|--------|--------|-------|
+| **Last quit duration** | R01R_A_PST12M_LSTQUIT_DUR | R02R_A_PST12M_LSTQUIT_DUR | R03R_A_PST12M_LSTQUIT_DUR | R04R_A_PST12M_LSTQUIT_DUR | R05R_A_PST12M_LSTQUIT_DUR | ✅ Minutes |
+| **Longest quit duration** | R01R_A_PST12M_LNQUIT_DUR | R02R_A_PST12M_LNQUIT_DUR | R03R_A_PST12M_LNQUIT_DUR | R04R_A_PST12M_LNQUIT_DUR | R05R_A_PST12M_LNQUIT_DUR | ✅ Minutes |
+
+### Cessation Methods (Aggregated Duration)
+
+| Feature | Wave 1 | Wave 2 | Wave 3 | Wave 4 | Wave 5 | Notes |
+|---------|--------|--------|--------|--------|--------|-------|
+| **NRT use (any)** | R01R_A_PST12M_LSTQUIT_NRT | R02R_A_PST12M_LSTQUIT_NRT | R03R_A_PST12M_LSTQUIT_NRT | R04R_A_PST12M_LSTQUIT_NRT | R05R_A_PST12M_LSTQUIT_NRT | ✅ Days used |
+| **NRT use (e-cig context)** | R01R_A_PST12M_LSTQUIT_ECIG_NRT | R02R_A_PST12M_LSTQUIT_ECIG_NRT | R03R_A_PST12M_LSTQUIT_ECIG_NRT | R04R_A_PST12M_LSTQUIT_ECIG_NRT | R05R_A_PST12M_LSTQUIT_ECIG_NRT | ✅ Fallback |
+| **Prescription meds** | R01R_A_PST12M_LSTQUIT_RX | R02R_A_PST12M_LSTQUIT_RX | R03R_A_PST12M_LSTQUIT_RX | R04R_A_PST12M_LSTQUIT_RX | R05R_A_PST12M_LSTQUIT_RX | ✅ Days used |
+| **Rx (e-cig context)** | R01R_A_PST12M_LSTQUIT_ECIG_RX | R02R_A_PST12M_LSTQUIT_ECIG_RX | R03R_A_PST12M_LSTQUIT_ECIG_RX | R04R_A_PST12M_LSTQUIT_ECIG_RX | R05R_A_PST12M_LSTQUIT_ECIG_RX | ✅ Fallback |
+
+### Household
+
+| Feature | Wave 1 | Wave 2 | Wave 3 | Wave 4 | Wave 5 | Notes |
+|---------|--------|--------|--------|--------|--------|-------|
+| **Household size (5 categories)** | R01R_HHSIZE5 | R02R_HHSIZE5 | R03R_HHSIZE5 | R04R_HHSIZE5 | R05R_HHSIZE5 | ✅ 1-5 scale (confirmed in data) |
+| **Youth in household** | R01R_HHYOUTH | R02R_HHYOUTH | R03R_HHYOUTH | R04R_HHYOUTH | R05R_HHYOUTH | ✅ 0/1 |
+
+---
+
+### Income and SES
+
+| Feature | Wave 1 | Wave 2 | Wave 3 | Wave 4 | Wave 5 | Notes |
+|---------|--------|--------|--------|--------|--------|-------|
+| **Poverty category (3-level)** | R01R_POVCAT3 | R02R_POVCAT3 | R03R_POVCAT3 | R04R_POVCAT3 | R05R_POVCAT3 | ✅ Used as `income` proxy in features |
+| **Poverty category (2-level)** | R01R_POVCAT2 | R02R_POVCAT2 | R03R_POVCAT2 | R04R_POVCAT2 | R05R_POVCAT2 | Optional fallback |
+
+---
+
+## 🔍 VARIABLES TO LOCATE
+
+### Education (HIGH PRIORITY)
+
+**Status**: ✅ FOUND in public use files
+
+**Confirmed mapping**:
+- `R0{w}R_A_AM0018` = DERIVED - Highest grade or level of school completed (6 levels)
+
+**Project mapping**:
+- We now map `education_code` from `R0{w}R_A_AM0018` and derive 4-level `education_cat`:
+   - 1 → <HS
+   - 2-3 → HS (GED + HS grad)
+   - 4 → Some College
+   - 5-6 → College+
+
+Note: We still keep fallback to `R0{w}R_A_EDUC` if it exists in any wave, but AM0018 is the primary source.
+
+### Individual NRT Products (MEDIUM PRIORITY)
+
+**Status**: ⏳ AGGREGATED in current data (all NRT types combined)
+
+**Search needed**:
+- R01_AC section for specific questions about:
+  - Nicotine patch
+  - Nicotine gum
+  - Nicotine lozenge
+  - Nicotine inhaler
+  - Nicotine nasal spray
+
+**Note**: May require disaggregating R0{w}R_A_PST12M_LSTQUIT_NRT or finding questionnaire items
+
+### Counseling/Behavioral Support (HIGH PRIORITY)
+
+**Status**: ✅ FOUND
+
+**Confirmed mapping**:
+- `R0{w}_AN0215` = Used counseling (in-person, telephone or web) or self-help materials (1=Yes, 2=No)
+
+This is now mapped wave-aware to the canonical `counseling` feature (1/0).
+
+### Quitline (MEDIUM PRIORITY)
+
+**Status**: NOT FOUND (no explicit quitline variable label found)
+
+**Search needed**:
+- Telephone quitline use
+- 1-800-QUIT-NOW or state quitlines
+
+**Possible patterns**:
+- May be captured under AN0215 (telephone or web counseling)
+- Continue searching for explicit quitline item; look for "phone", "hotline", "800" in labels
+
+### Plans to Quit / Motivation (HIGH PRIORITY)
+
+**Status**: PARTIALLY IDENTIFIED
+
+**Found but needs confirmation**:
+- R01_AC9010 through R01_AC9017 appear to be yes/no questions about quitting
+- Need to identify which specific items are:
+  - Plans to quit in next 30 days
+  - Plans to quit in next 6 months
+  - Readiness/interest to quit (scale)
+
+**Action**: Check PATH codebook or questionnaire to see exact wording
+
+### Lifetime Quit Attempts (MEDIUM PRIORITY)
+
+**Status**: NOT FOUND
+
+**Search needed**:
+- Number of times tried to quit (numeric count)
+- "Have you ever tried to quit" with follow-up count
+
+**Possible patterns**:
+- R01_AC variables in quit history section
+- May be computed from wave-to-wave transitions
+
+### Home Smoking Rules (HIGH PRIORITY)
+
+**Status**: NOT FOUND
+
+**Search needed**:
+- Smoking allowed/not allowed in home
+- Indoor smoking policy at home
+- Home completely smoke-free
+
+**Possible patterns**:
+- Variables with RULE, INDOOR, INSIDE, HOME in label
+- May be in household/parent questionnaire, not adult; check separate files or restricted data
+
+### Workplace Smoking Policy (LOW PRIORITY)
+
+**Status**: NOT FOUND
+
+**Search needed**:
+- Workplace smoking restrictions
+- Indoor work policy
+
+**Note**: May not be in public use files (employment data sometimes restricted)
+
+---
+
+## 🔧 NEXT STEPS
+
+### Immediate Actions
+
+1. **Review PATH Codebook PDF** (if available locally or from NAHDAP)
+   - Search for education variable names
+   - Identify AC9010-9017 question text
+   - Find home smoking rules variables
+
+2. **Check Wave-to-Wave Consistency**
+   - Run script to verify all found variables exist in Waves 2-5
+   - Document any variable name changes across waves
+   - Note any variables added/removed in later waves
+
+3. **Examine Questionnaire Structure**
+   - AC sections appear to be Adult Core questions
+   - Look for section numbering patterns (AC10=smoking, AC11=quit attempts, AC12=? AC13=?)
+
+### Cross-Wave Verification Script Needed
+
+```python
+# Verify variables exist in all waves
+for wave in [1, 2, 3, 4, 5]:
+    df = load_wave(wave)
+    check_variables = [
+        f'R0{wave}_AC9010',  # Plans to quit
+        f'R0{wave}_AC9011',  # ?
+        # etc...
+    ]
+```
+
+### Documentation Requirements
+
+- [ ] Complete education variable mapping
+- [ ] Identify specific NRT product variables (if available)
+- [ ] Map counseling/behavioral support variables
+- [ ] Map quitline usage variable
+- [ ] Confirm plans to quit / motivation variables
+- [ ] Find home smoking rules
+- [ ] Document wave-specific differences
+- [ ] Create variable name translation table for feature engineering
+
+---
+
+## 📊 WAVE DIFFERENCES TRACKER
+
+### Variables Added in Later Waves
+- TBD (need to check wave-specific codebooks)
+
+### Variables Removed in Later Waves
+- TBD
+
+### Coding Changes Across Waves
+- None identified yet for confirmed variables
+
+---
+
+## 🎯 PRIORITY RANKING FOR DASHBOARD
+
+1. **CRITICAL** (needed for model finalization):
+   - Education (strong predictor)
+   - Plans to quit / motivation (behavioral predictor)
+   - Home smoking rules (environmental predictor)
+   - Counseling (method predictor)
+
+2. **IMPORTANT** (enhance model):
+   - Individual NRT products (method specificity)
+   - Quitline (method predictor)
+   - Lifetime quit attempts (history predictor)
+
+3. **NICE TO HAVE** (additional features):
+   - Workplace policy (environmental)
+   - Mental health variables
+   - Alcohol use
+
+---
+
+*Next update: After codebook review and wave verification*

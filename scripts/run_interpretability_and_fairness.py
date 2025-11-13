@@ -129,17 +129,18 @@ def compute_fairness(model, X_test, y_test, test_df):
     for gv in group_vars:
         f_df = evaluate_fairness(model, X_test, y_test, test_df, group_var=gv)
         # evaluate_fairness already populates group_variable per row; ensure consistency
-        fairness_frames.append(f_df)
-        disp = calculate_disparities(f_df, metric='auc')
-        if not disp.empty:
-            for _, r in disp.iterrows():
-                rows.append({
-                    'group_variable': r['group_variable'],
-                    'max_auc': r['max'],
-                    'min_auc': r['min'],
-                    'disparity': r['disparity'],
-                    'significant': r['significant']
-                })
+        if f_df is not None and not f_df.empty:
+            fairness_frames.append(f_df)
+            disp = calculate_disparities(f_df, metric='auc')
+            if not disp.empty:
+                for _, r in disp.iterrows():
+                    rows.append({
+                        'group_variable': r['group_variable'],
+                        'max_auc': r['max'],
+                        'min_auc': r['min'],
+                        'disparity': r['disparity'],
+                        'significant': r['significant']
+                    })
     fairness_all = pd.concat(fairness_frames, ignore_index=True) if fairness_frames else pd.DataFrame()
     disparities = pd.DataFrame(rows)
     return fairness_all, disparities
