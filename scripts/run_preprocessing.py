@@ -24,6 +24,8 @@ WAVE_FILES = {
     3: DATA_DIR / 'PATH_W3_Adult_Public.dta',
     4: DATA_DIR / 'PATH_W4_Adult_Public.dta',
     5: DATA_DIR / 'PATH_W5_Adult_Public.dta',
+    6: DATA_DIR / 'PATH_W6_Adult_Public.dta',  # Wave 6 (optional, load if present)
+    7: DATA_DIR / 'PATH_W7_Adult_Public.dta',  # Wave 7 (optional, load if present)
 }
 
 # Sample size (None for full data, or number for testing)
@@ -82,6 +84,7 @@ def create_transitions(wave_t_data, wave_t1_data, wave_t, wave_t1):
         f'R0{wave_t}R_A_AGE', f'R0{wave_t}R_A_AGECAT7', f'R0{wave_t}R_A_AGECAT6', f'R0{wave_t}R_A_SEX',
         f'R0{wave_t}R_POVCAT3', f'R0{wave_t}R_POVCAT2', f'R0{wave_t}R_A_INCOME', 
         f'R0{wave_t}R_A_RACECAT3', f'R0{wave_t}R_A_RACE', f'R0{wave_t}R_A_HISP',
+        f'R0{wave_t}R_A_AM0018',  # Education
         # Core smoking behavior
         f'R0{wave_t}R_A_PERDAY_P30D_CIGS', f'R0{wave_t}R_A_MINFIRST_CIGS',
         # Quit history and duration
@@ -89,8 +92,13 @@ def create_transitions(wave_t_data, wave_t1_data, wave_t, wave_t1):
         # Cessation methods
         f'R0{wave_t}R_A_PST12M_LSTQUIT_NRT', f'R0{wave_t}R_A_PST12M_LSTQUIT_RX',
         f'R0{wave_t}R_A_PST12M_LSTQUIT_ECIG_NRT', f'R0{wave_t}R_A_PST12M_LSTQUIT_ECIG_RX',
+        f'R0{wave_t}_AN0215',  # Counseling
+        # Motivation
+        f'R0{wave_t}_AN0235', f'R0{wave_t}_AN0240',  # Plans to quit and timeframe
         # Household environment
         f'R0{wave_t}R_HHSIZE5', f'R0{wave_t}R_HHYOUTH',
+        f'R0{wave_t}_AR1045',  # Home smoking rules
+        f'R0{wave_t}_AX0066_01',  # Household smokers (W1-W3 only)
     ]
     existing_baseline_cols = [c for c in baseline_cols if c in smokers_t.columns]
 
@@ -132,7 +140,7 @@ def main():
     print("-"*70)
     
     waves_data = {}
-    for wave_num in range(1, 6):
+    for wave_num in range(1, 8):  # Attempt Waves 1–7
         df = load_wave(wave_num, nrows=SAMPLE_SIZE)
         if df is not None:
             waves_data[wave_num] = df
@@ -159,7 +167,7 @@ def main():
     
     all_transitions = []
     
-    for wave_t in range(1, 5):
+    for wave_t in range(1, 7):  # Transitions W1→W2 ... W6→W7
         wave_t1 = wave_t + 1
         
         if wave_t in waves_data and wave_t1 in waves_data:
@@ -212,12 +220,11 @@ def main():
     print(engineered['quit_success'].value_counts())
     print(f"Quit rate: {100 * engineered['quit_success'].mean():.1f}%")
     
-    # Select features for modeling + preserve raw wave-specific columns for downstream re-engineering
+    # Select features for modeling (identifiers + canonical engineered features only)
     from src.feature_engineering import get_feature_list
     feature_cols = get_feature_list()
 
     # Ensure that every expected feature column exists, even if entirely zeros.
-    # This guarantees a stable schema for downstream modeling and reporting.
     missing_features = [f for f in feature_cols if f not in engineered.columns]
     if missing_features:
         print(f"\nAdding {len(missing_features)} missing feature column(s) with zeros:")
@@ -225,17 +232,11 @@ def main():
             engineered[col] = 0
             print(f"  • {col}")
 
-    # Now compute availability strictly for logging/ordering; all should exist after the block above.
     available_features = [f for f in feature_cols if f in engineered.columns]
-    
     print(f"\nFeature availability: {len(available_features)}/{len(feature_cols)}")
-    
-    # Preserve raw wave-specific demographic/dependence columns alongside engineered features
-    raw_wave_cols = [c for c in engineered.columns if c.startswith('R0') and ('_A_' in c or 'POVCAT' in c)]
-    
-    # Create final dataset with modeling columns + raw inputs (keep ordering stable)
-    modeling_cols = ['PERSONID', 'baseline_wave', 'followup_wave', 'transition', 'quit_success'] + feature_cols + raw_wave_cols
-    existing_cols = list(dict.fromkeys([c for c in modeling_cols if c in engineered.columns]))  # dedupe
+
+    modeling_cols = ['PERSONID', 'baseline_wave', 'followup_wave', 'transition', 'quit_success'] + feature_cols
+    existing_cols = [c for c in modeling_cols if c in engineered.columns]
     modeling_data = engineered[existing_cols].copy()
     
     # Save

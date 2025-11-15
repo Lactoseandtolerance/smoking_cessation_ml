@@ -221,17 +221,18 @@ def map_from_codebook(
     # Wave-aware mapping when pooled data contains baseline_wave
     if 'baseline_wave' in df.columns:
         # AGE: prefer numeric age if available; else map AGECAT7 to midpoints
+        # Extend support to waves 6-7 (graceful if columns absent)
         age_num = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_AGE'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_AGE'] for w in range(1, 8)}
         )
         age_cat = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_AGECAT7'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_AGECAT7'] for w in range(1, 8)}
         )
         age_cat6 = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_AGECAT6'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_AGECAT6'] for w in range(1, 8)}
         )
         age_num = _extract_numeric_code(clean(age_num))
         age_cat_codes = _extract_numeric_code(clean(age_cat))
@@ -261,7 +262,7 @@ def map_from_codebook(
         # SEX: 1=Male, 2=Female
         sex_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_SEX'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_SEX'] for w in range(1, 8)}
         )
         sex_codes = _extract_numeric_code(clean(sex_wave))
         df['sex'] = sex_codes.map({1: 'Male', 2: 'Female'})
@@ -269,7 +270,7 @@ def map_from_codebook(
         # INCOME: try both POVCAT3 and A_INCOME
         income_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_POVCAT3', f'R0{w}R_A_INCOME'] for w in range(1, 6)}
+            {w: [f'R0{w}R_POVCAT3', f'R0{w}R_A_INCOME'] for w in range(1, 8)}
         )
         df['income'] = _extract_numeric_code(clean(income_wave))
 
@@ -277,18 +278,18 @@ def map_from_codebook(
         # Use R0{w}R_A_AM0018 if available; fallback to R0{w}R_A_EDUC (if present)
         edu_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_AM0018', f'R0{w}R_A_EDUC'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_AM0018', f'R0{w}R_A_EDUC'] for w in range(1, 8)}
         )
         df['education_code'] = _extract_numeric_code(clean(edu_wave))
 
         # RACE / HISPANIC
         race_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_RACECAT3', f'R0{w}R_A_RACE'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_RACECAT3', f'R0{w}R_A_RACE'] for w in range(1, 8)}
         )
         hisp_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_HISP'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_HISP'] for w in range(1, 8)}
         )
         # Stash temporarily to reuse existing normalization function
         df['__race_code_waveaware'] = race_wave
@@ -308,24 +309,24 @@ def map_from_codebook(
         # CPD and TTFC (numeric)
         cpd_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_PERDAY_P30D_CIGS'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_PERDAY_P30D_CIGS'] for w in range(1, 8)}
         )
         df['cpd'] = pd.to_numeric(clean(cpd_wave), errors='coerce')
 
         ttfc_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_MINFIRST_CIGS'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_MINFIRST_CIGS'] for w in range(1, 8)}
         )
         df['ttfc_minutes'] = pd.to_numeric(clean(ttfc_wave), errors='coerce')
 
         # QUIT HISTORY: Last quit duration (minutes) and longest quit duration
         lastquit_dur_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_PST12M_LSTQUIT_DUR'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_PST12M_LSTQUIT_DUR'] for w in range(1, 8)}
         )
         longquit_dur_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_PST12M_LNQUIT_DUR'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_PST12M_LNQUIT_DUR'] for w in range(1, 8)}
         )
         # Convert from minutes to days for longest_abstinence_days
         lastquit_minutes = pd.to_numeric(clean(lastquit_dur_wave), errors='coerce')
@@ -334,30 +335,77 @@ def map_from_codebook(
             longquit_minutes.notna(),
             lastquit_minutes / (60 * 24)
         ).fillna(0)
+        # New separate last vs longest durations + ratio
+        df['last_quit_duration_days'] = (lastquit_minutes / (60 * 24)).fillna(0)
+        df['longest_quit_duration_days'] = (longquit_minutes / (60 * 24)).fillna(0)
+        denom = df['longest_quit_duration_days'] + 0.25  # guard against zero
+        df['recent_vs_longest_ratio'] = (df['last_quit_duration_days'] / denom).fillna(0).clip(upper=5)
 
         # CESSATION METHODS: NRT and prescription medications
         # These variables contain DURATION in days (positive = used, -99911 = skip/not used)
         nrt_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_PST12M_LSTQUIT_NRT', f'R0{w}R_A_PST12M_LSTQUIT_ECIG_NRT'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_PST12M_LSTQUIT_NRT', f'R0{w}R_A_PST12M_LSTQUIT_ECIG_NRT'] for w in range(1, 8)}
         )
         rx_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}R_A_PST12M_LSTQUIT_RX', f'R0{w}R_A_PST12M_LSTQUIT_ECIG_RX'] for w in range(1, 6)}
+            {w: [f'R0{w}R_A_PST12M_LSTQUIT_RX', f'R0{w}R_A_PST12M_LSTQUIT_ECIG_RX'] for w in range(1, 8)}
         )
         nrt_days = pd.to_numeric(clean(nrt_wave), errors='coerce')
         rx_days = pd.to_numeric(clean(rx_wave), errors='coerce')
         # Used = positive values (duration >0 days)
         df['nrt_any'] = (nrt_days > 0).astype(int)
         df['varenicline'] = (rx_days > 0).astype(int)  # Aggregated prescription meds
+        # Raw + log duration intensity features
+        df['nrt_days_raw'] = nrt_days.clip(lower=0).fillna(0)
+        df['rx_days_raw'] = rx_days.clip(lower=0).fillna(0)
+        df['nrt_days_log'] = np.log1p(df['nrt_days_raw'])
+        df['rx_days_log'] = np.log1p(df['rx_days_raw'])
 
         # COUNSELING (in-person, telephone or web) or self-help materials
         counseling_wave = _wave_aware_pick(
             df, 'baseline_wave',
-            {w: [f'R0{w}_AN0215'] for w in range(1, 6)}
+            {w: [f'R0{w}_AN0215'] for w in range(1, 8)}
         )
         counseling_codes = _extract_numeric_code(clean(counseling_wave))
         df['counseling'] = (counseling_codes == 1).astype(int)
+
+        # PLANS TO QUIT (AN0235: yes/no, AN0240: timeframe)
+        plans_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}_AN0235'] for w in range(1, 8)}
+        )
+        plans_codes = _extract_numeric_code(clean(plans_wave))
+        df['plans_quit_any'] = (plans_codes == 1).astype(int)
+        
+        # Timeframe: 1=7 days, 2=30 days, 3=6 months, 4=1 year, 5=more than 1 year
+        timeframe_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}_AN0240'] for w in range(1, 8)}
+        )
+        timeframe_codes = _extract_numeric_code(clean(timeframe_wave))
+        df['plans_quit_30days'] = ((plans_codes == 1) & (timeframe_codes <= 2)).astype(int)
+        df['plans_quit_6months'] = ((plans_codes == 1) & (timeframe_codes <= 3)).astype(int)
+        # Granular motivation features
+        df['quit_timeframe_code'] = timeframe_codes  # ordinal 1..5
+        df['early_quit_intent'] = ((plans_codes == 1) & (timeframe_codes <= 2)).astype(int)
+
+        # HOME SMOKING RULES (AR1045: 1=not allowed anywhere, 2=some places, 3=allowed anywhere)
+        home_rules_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}_AR1045'] for w in range(1, 8)}
+        )
+        home_rules_codes = _extract_numeric_code(clean(home_rules_wave))
+        df['smokefree_home'] = (home_rules_codes == 1).astype(int)  # Completely smoke-free
+        
+        # HOUSEHOLD SMOKERS (AX0066_01: 1=marked/yes, 2=not marked/no)
+        # Note: Only available W1-W3
+        household_smokers_wave = _wave_aware_pick(
+            df, 'baseline_wave',
+            {w: [f'R0{w}_AX0066_01'] for w in range(1, 4)}  # Only W1-W3
+        )
+        household_smokers_codes = _extract_numeric_code(clean(household_smokers_wave))
+        df['household_smokers_explicit'] = (household_smokers_codes == 1).astype(int)
 
         # HOUSEHOLD ENVIRONMENT
         hhsize_wave = _wave_aware_pick(
@@ -687,9 +735,19 @@ def engineer_motivation_features(df):
     Returns:
         pd.DataFrame: Dataset with motivation features added
     """
-    # Readiness to quit (assuming 1-10 scale)
-    df['motivation_high'] = (pd.to_numeric(_series_or_default(df, 'readiness_to_quit', 0), errors='coerce') >= 7).astype(int)
-    df['plans_to_quit'] = _series_or_default(df, 'plans_quit_next_month', 0).fillna(0).astype(int)
+    # Plans to quit - use mapped variables if available, otherwise placeholder
+    if 'plans_quit_30days' in df.columns:
+        df['plans_to_quit'] = df['plans_quit_30days'].fillna(0).astype(int)
+    elif 'plans_quit_any' in df.columns:
+        df['plans_to_quit'] = df['plans_quit_any'].fillna(0).astype(int)
+    else:
+        df['plans_to_quit'] = _series_or_default(df, 'plans_quit_next_month', 0).fillna(0).astype(int)
+    
+    # Motivation/readiness proxy from plans timeframe
+    if 'plans_quit_6months' in df.columns:
+        df['motivation_high'] = df['plans_quit_6months'].fillna(0).astype(int)
+    else:
+        df['motivation_high'] = (pd.to_numeric(_series_or_default(df, 'readiness_to_quit', 0), errors='coerce') >= 7).astype(int)
     
     return df
 
@@ -704,13 +762,24 @@ def engineer_environmental_features(df):
     Returns:
         pd.DataFrame: Dataset with environmental features added
     """
-    # Use num_household_smokers if already populated (from map_from_codebook)
-    if 'num_household_smokers' in df.columns:
+    # Household smokers - use explicit mapped variable (W1-W3) or derived proxy (all waves)
+    if 'household_smokers_explicit' in df.columns and df['household_smokers_explicit'].notna().sum() > 0:
+        # Fill W4-W5 NaN with proxy from household size
+        if 'num_household_smokers' in df.columns:
+            df['household_smokers'] = df['household_smokers_explicit'].fillna(
+                (pd.to_numeric(df['num_household_smokers'], errors='coerce') > 0).astype(int)
+            ).astype(int)
+        else:
+            df['household_smokers'] = df['household_smokers_explicit'].fillna(0).astype(int)
+    elif 'num_household_smokers' in df.columns:
         df['household_smokers'] = (pd.to_numeric(df['num_household_smokers'], errors='coerce') > 0).astype(int)
     else:
         df['household_smokers'] = (pd.to_numeric(_series_or_default(df, 'num_household_smokers', 0), errors='coerce') > 0).astype(int)
     
-    df['smokefree_home'] = _series_or_default(df, 'home_smoking_rules', 0).fillna(0).astype(int)
+    # Smokefree home - already mapped in map_from_codebook as 'smokefree_home'
+    if 'smokefree_home' not in df.columns:
+        df['smokefree_home'] = _series_or_default(df, 'home_smoking_rules', 0).fillna(0).astype(int)
+    
     df['workplace_smokefree'] = _series_or_default(df, 'workplace_policy', 0).fillna(0).astype(int)
     
     return df
@@ -811,17 +880,21 @@ def get_feature_list():
         'used_counseling', 'used_quitline', 'used_any_behavioral', 'used_any_method', 'cold_turkey',
         
         # Method combinations
-    'med_plus_counseling', 'nrt_plus_med', 'nrt_plus_counseling', 'nrt_plus_quitline', 'med_plus_quitline',
+        'med_plus_counseling', 'nrt_plus_med', 'nrt_plus_counseling', 'nrt_plus_quitline', 'med_plus_quitline',
         
         # Quit history
         'num_previous_quits', 'previous_quit_success', 'longest_quit_duration',
+        'last_quit_duration_days', 'longest_quit_duration_days', 'recent_vs_longest_ratio',
         
         # Motivation
-        'motivation_high', 'plans_to_quit',
+        'motivation_high', 'plans_to_quit', 'quit_timeframe_code', 'early_quit_intent',
         
         # Environmental
         'household_smokers', 'smokefree_home',
-        
+
+        # Treatment intensity (durations)
+        'nrt_days_raw', 'rx_days_raw', 'nrt_days_log', 'rx_days_log',
+
         # Interactions
         'highdep_x_varenicline', 'highdep_x_nrt', 'young_x_counseling'
     ]

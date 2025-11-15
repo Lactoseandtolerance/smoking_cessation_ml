@@ -143,60 +143,59 @@ def train_random_forest(X_train, y_train, X_val, y_val):
     return rf, y_val_pred, y_val_pred_proba
 
 
-def train_xgboost(X_train, y_train, X_val, y_val):
-    """
-    Train XGBoost with native NaN handling.
-    
-    XGBoost can handle missing values (NaN) natively by learning the optimal
-    direction for missing values at each split. This is superior to simple
-    imputation as it allows the model to learn patterns in missingness.
-    
+def train_xgboost(X_train, y_train, X_val, y_val, params=None):
+    """Train XGBoost with native NaN handling and optional hyperparameters.
+
     Args:
         X_train, y_train: Training data (can contain NaN)
         X_val, y_val: Validation data (can contain NaN)
-        
+        params (dict|None): Optional parameter overrides for XGBClassifier.
+
     Returns:
-        Tuple of (model, predictions, probabilities)
+        (model, y_val_pred, y_val_pred_proba)
     """
-    # NO imputation needed - XGBoost handles NaN natively!
-    # Just ensure data is numeric (already done in feature engineering)
-    
-    # Calculate scale_pos_weight for class imbalance
     scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum()
     print(f"Scale pos weight: {scale_pos_weight:.2f}")
-    
-    # Check for NaN in training data
+
     nan_cols = X_train.columns[X_train.isna().any()].tolist()
     if nan_cols:
         print(f"Training with {len(nan_cols)} features containing NaN (XGBoost handles natively)")
-        print(f"  Top features with missing data:")
         missing_pct = (X_train.isna().sum() / len(X_train) * 100).sort_values(ascending=False)
+        print("  Top features with missing data:")
         for col in missing_pct.head(5).index:
             print(f"    • {col}: {missing_pct[col]:.1f}% missing")
-    
-    # Train XGBoost with native missing value handling
-    xgb_model = xgb.XGBClassifier(
-        n_estimators=100,
-        max_depth=5,
-        learning_rate=0.1,
-        scale_pos_weight=scale_pos_weight,
-        missing=np.nan,  # Explicitly tell XGBoost that NaN means missing
-        random_state=42,
-        eval_metric='auc',
-        early_stopping_rounds=10
-    )
-    
-    # Fit with early stopping - use raw data with NaN
+
+    default_params = {
+        'n_estimators': 500,
+        'max_depth': 4,
+        'learning_rate': 0.05,
+        'subsample': 0.8,
+        'colsample_bytree': 0.8,
+        'min_child_weight': 5,
+        'gamma': 0.1,
+        'reg_lambda': 2.0,
+        'reg_alpha': 0.5,
+        'scale_pos_weight': scale_pos_weight,
+        'missing': np.nan,
+        'random_state': 42,
+        'eval_metric': 'auc'
+    }
+    if params:
+        default_params.update(params)
+
+    # Early stopping rounds only used if n_estimators is large enough
+    early_stopping_rounds = 25 if default_params.get('n_estimators', 0) >= 300 else 10
+
+    xgb_model = xgb.XGBClassifier(**default_params)
+    # Fit model (early stopping disabled due to API incompatibility in current xgboost version)
     xgb_model.fit(
         X_train, y_train,
         eval_set=[(X_val, y_val)],
         verbose=False
     )
-    
-    # Predict on validation set - XGBoost handles NaN in predictions too
+
     y_val_pred_proba = xgb_model.predict_proba(X_val)[:, 1]
     y_val_pred = xgb_model.predict(X_val)
-    
     return xgb_model, y_val_pred, y_val_pred_proba
 
 

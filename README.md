@@ -6,6 +6,28 @@
 
 This project uses the Population Assessment of Tobacco and Health (PATH) Study Waves 1-5 to develop a machine learning model that predicts smoking cessation success. The approach employs a person-period dataset design, implements three ML algorithms with class weighting, and provides SHAP-based interpretability with fairness assessment.
 
+### Wave-Pair Evaluation (Expanded Waves 1→7)
+After extending preprocessing to include transitions up to Wave 7, a dedicated script `scripts/run_model_training_and_wave_eval.py` now:
+1. Retrains all three models on the full pooled transitions dataset.
+2. Saves the best validation performer (currently XGBoost) to `models/xgboost_best.pkl`.
+3. Produces per baseline→follow-up wave metrics (ROC-AUC, PR-AUC, precision, recall, F1, quit rate) for validation and test partitions.
+4. Computes feature drift across baseline waves versus Wave 1 using mean differences and Kolmogorov–Smirnov statistics (SciPy) for the top drifted features.
+
+Generated reports:
+- `reports/WAVE_PAIR_EVAL.md`: Wave-pair model performance tables.
+- `reports/FEATURE_DRIFT.md`: Feature drift summary (top 25 features by max absolute mean difference).
+
+Run command:
+```bash
+python scripts/run_model_training_and_wave_eval.py
+```
+
+### Drift Interpretation Notes
+- Large negative mean differences in `cpd` across mid waves reflect declining average cigarettes per day among remaining smokers.
+- Increasing mean age and decreasing `age_young` proportion in later waves indicate cohort aging and potential survivorship.
+- `college_degree` proxy collapse in later waves signals missing or recoded education data for those waves (treated as 0 in feature engineering).
+
+Use these drift signals to consider adaptive reweighting, feature recalibration, or temporal modeling if performance degrades disproportionately in later wave pairs.
 **Target Performance:** ROC-AUC > 0.70  
 **Published Benchmark:** 0.72 AUC (Issabakhsh et al., 2023)
 
@@ -143,28 +165,6 @@ A Multi-Model Approach with PATH Study Data. [Course/Institution].
 
 Angel Nivar, Ananda Downing
 
-## Acknowledgments
-## Feature Engineering Workflow (Phase 3)
-
-Phase 3 introduces a two-layer feature engineering approach to decouple raw PATH Study wave-specific variable names from canonical modeling features.
-
-1. **Mapping Layer (`map_from_codebook`)**
-   - Accepts the raw DataFrame and optional `codebook_overrides` dict with explicit variable name mappings.
-   - Searches for candidate columns using a centralized `VARIABLE_CANDIDATES` dictionary in `src/feature_engineering.py` when overrides are not supplied.
-   - Normalizes missing codes (negative PATH values) to `NaN` if `recode_missing=True`.
-   - Derives canonical columns: `age`, `sex`, `education_cat`, `income`, `race_ethnicity` (+ one-hot race dummies), `cpd`, `ttfc_minutes`, and cessation method indicators.
-
-2. **Feature Layer (`engineer_*_features`)**
-   - Assumes canonical columns exist; builds dependence, demographic, cessation method, history, motivation, environmental, and interaction features.
-   - Robust to partial availability (uses `df.get('col', default)` for method indicators).
-
-3. **Unified Entry Point (`engineer_all_features`)**
-   - New signature: `engineer_all_features(df, codebook_overrides=None, recode_missing=True)`.
-   - Calls mapping layer first, then sequential feature builders.
-
-### Supplying Overrides
-```python
-codebook_overrides = {
     'age': 'R01R_A_AGE',          # Example PATH variable names
     'sex': 'R01R_A_SEX',
     'education_code': 'R01R_A_EDUC',

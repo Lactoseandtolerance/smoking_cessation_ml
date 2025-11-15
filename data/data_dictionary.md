@@ -6,20 +6,13 @@
 ---
 
 ## Core Outcome Variable
-
 | Feature Name | PATH Variable | Description | Coding |
 |--------------|---------------|-------------|--------|
 | quit_success | DERIVED (from R0{w}_AC1002/AC1003 at follow-up) | 30-day smoking abstinence at follow-up | 0 = Still smoking, 1 = Abstinent |
 
----
-
-## Smoking Status & Behavior
-
-| Feature Name | PATH Variable | Description | Coding |
 |--------------|---------------|-------------|--------|
 | current_smoker | R0{w}_AC1002, R0{w}_AC1003 | Current smoking status | 0 = No, 1 = Yes |
 | quit_attempt | DERIVED (from current_smoker baseline→follow-up) | Made quit attempt since last wave | 0 = No, 1 = Yes |
-| cpd | R0{w}R_A_PERDAY_P30D_CIGS | Cigarettes per day | Numeric (1-60+) |
 | ttfc_minutes | R0{w}R_A_MINFIRST_CIGS | Time to first cigarette after waking | Numeric (minutes) |
 
 ---
@@ -29,7 +22,6 @@
 | Feature Name | PATH Variable | Description | Coding |
 |--------------|---------------|-------------|--------|
 | person_id | PERSONID | Unique person identifier | String/Numeric |
-| age | R0{w}R_A_AGE, R0{w}R_A_AGECAT7, R0{w}R_A_AGECAT6 | Age at interview | Numeric (18-99) or derived from categories |
 | sex | R0{w}R_A_SEX | Biological sex | 1 = Male, 2 = Female |
 | education_code | R0{w}R_A_AM0018 | Highest grade or level of school completed (6 levels) | 1=<HS, 2=GED, 3=HS, 4=Some college/Assoc, 5=Bachelor's, 6=Advanced |
 | education_cat | DERIVED from education_code | Collapsed education category | <HS, HS (incl. GED), Some College, College+ |
@@ -39,37 +31,26 @@
 ---
 
 ## Cessation Methods
-
 | Feature Name | PATH Variable | Description | Coding |
 |--------------|---------------|-------------|--------|
 | nrt_any | R0{w}R_A_PST12M_LSTQUIT_NRT, R0{w}R_A_PST12M_LSTQUIT_ECIG_NRT | Used any NRT product | 0 = No, 1 = Yes (duration > 0) |
-| nrt_patch | Not currently mapped (aggregated to nrt_any) | Used nicotine patch | 0 = No, 1 = Yes |
-| nrt_gum | Not currently mapped (aggregated to nrt_any) | Used nicotine gum | 0 = No, 1 = Yes |
-| nrt_lozenge | Not currently mapped (aggregated to nrt_any) | Used nicotine lozenge | 0 = No, 1 = Yes |
-| varenicline | R0{w}R_A_PST12M_LSTQUIT_RX, R0{w}R_A_PST12M_LSTQUIT_ECIG_RX | Used varenicline (Chantix) | 0 = No, 1 = Yes (aggregated RX duration > 0) |
-| bupropion | R0{w}R_A_PST12M_LSTQUIT_RX (aggregated) | Used bupropion (Zyban/Wellbutrin) | 0 = No, 1 = Yes |
-| counseling | R0{w}_AN0215 | Used counseling (in-person, telephone, or web) or self-help materials | 0 = No, 1 = Yes |
 | quitline | Not currently mapped | Used telephone quitline | 0 = No, 1 = Yes |
-
 ---
 
 ## Quit History
 
-| Feature Name | PATH Variable | Description | Coding |
 |--------------|---------------|-------------|--------|
 | lifetime_quit_attempts | Not currently mapped | Number of lifetime quit attempts | Numeric (0-99) |
 | longest_abstinence_days | R0{w}R_A_PST12M_LNQUIT_DUR, R0{w}R_A_PST12M_LSTQUIT_DUR | Longest period of abstinence | Numeric (minutes → days) |
 | previous_successful_quit | DERIVED | Ever successfully quit for 6+ months | 0 = No, 1 = Yes |
 
----
 
 ## Motivation & Intention
-
 | Feature Name | PATH Variable | Description | Coding |
 |--------------|---------------|-------------|--------|
-| readiness_to_quit | Not currently mapped | Readiness/interest in quitting | Scale (e.g., 1-10) |
-| plans_quit_next_month | Not currently mapped | Plans to quit in next 30 days | 0 = No, 1 = Yes |
-| plans_quit_next_6months | Not currently mapped | Plans to quit in next 6 months | 0 = No, 1 = Yes |
+| plans_to_quit | R0{w}_AN0235 + R0{w}_AN0240 | Plans to quit within 30 days | 1 if AN0235==1 and AN0240 in {1,2}; else 0 |
+| motivation_high | R0{w}_AN0235 + R0{w}_AN0240 | Plans to quit within 6 months | 1 if AN0235==1 and AN0240 in {1,2,3}; else 0 |
+| quit_timeframe_raw | R0{w}_AN0240 | Reported timeframe for quitting | 1=7d,2=30d,3=6mo,4=1y,5=>1y |
 
 ---
 
@@ -77,72 +58,109 @@
 
 | Feature Name | PATH Variable | Description | Coding |
 |--------------|---------------|-------------|--------|
-| num_household_smokers | DERIVED (from R0{w}R_HHSIZE5, R0{w}R_HHYOUTH) | Number of smokers in household | Proxy: 1 if hhsize>=3 or youth present, else 0 |
-| home_smoking_rules | Not currently mapped | Smoking allowed in home | 0 = Allowed, 1 = Not allowed |
-| workplace_policy | Not currently mapped | Workplace smoking policy | 0 = Allowed, 1 = Restricted/banned |
+| household_smokers | R0{w}_AX0066_01 (W1–W3) / Proxy (W4–W5) | Presence of other cigarette smokers in household | 1 if AX0066_01==1 (W1–W3); else proxy (derived); 0 otherwise |
+| workplace_smokefree | Not currently mapped | Workplace smoking policy | 0 = Allowed, 1 = Restricted/banned (placeholder) |
+| household_smokers_explicit | R0{w}_AX0066_01 | Explicit household smoker indicator (W1–W3 only) | 1=Marked, 0=Not marked |
 
----
 
 ## Additional Variables (if available in Public Use Files)
 
-| Feature Name | PATH Variable | Description | Coding |
 |--------------|---------------|-------------|--------|
 | mental_health_diagnosis | Not currently mapped | Mental health condition | 0 = No, 1 = Yes |
 | alcohol_frequency | Not currently mapped | Alcohol consumption frequency | Scale or categorical |
 | wake_up_urge | Not currently mapped | Urge to smoke upon waking | Scale (e.g., 1-5) |
-
 ---
 
 ## Missing Value Codes in PATH Study
 
-PATH Study uses negative values for missing data:
-- `-9` = Refused
 - `-8` = Don't know / Not ascertained
-- `-7` = Don't know
 - `-4` = Multiple responses (invalid)
 - `-1` = Inapplicable (skip pattern)
 
 **These should be recoded to `NaN` during preprocessing.**
 
----
 
 ## Survey Weights
 
 | Variable | PATH Variable | Description |
 |----------|---------------|-------------|
-| survey_weight | Not currently used | Person-level survey weight for analysis |
 
 *Note: Compare weighted vs. unweighted models. Use whichever performs better.*
 
 ---
 
-## Notes for Implementation
 
 1. **Variable Names:** Fill in actual PATH variable names after reviewing the codebook
 2. **Wave-Specific Naming:** PATH uses wave prefixes (e.g., R01_ for Wave 1, R02_ for Wave 2)
 3. **Longitudinal Merging:** Variables will need suffixes (_t for baseline, _t1 for follow-up)
 4. **Derivation Rules:** Document any complex derivations or calculations
 5. **Version Control:** Note PATH Study version and wave-specific differences
-
 ---
 
 ## TODO: Update This File
-
 - [ ] Review PATH Study codebook (565-page user guide)
 - [ ] Identify exact variable names for each feature
 - [ ] Document wave-specific variable naming conventions
-- [ ] Note any variables that are restricted (not in Public Use Files)
 - [ ] Document any derivation logic for computed variables
 - [ ] Verify coding schemes match documentation
 
 ---
 
-*Last Updated: 2025-11-12*  
-*PATH Study Version: Public Use Files, Waves 1-5*
 
 ---
 
-## Wave-aware PATH variables used by the pipeline
+---
+
+## Raw Alias Columns (Waves 1–4)
+
+To improve transparency and auditability, non-engineered "alias" columns have been added for selected raw PATH items across Waves 1–4. These aliases preserve original coding (including negative missing codes) and follow the naming pattern:
+
+`w{wave}_{semantic_suffix}`
+
+Where `{wave}` ∈ {1,2,3,4}. Wave 5 aliases are pending. Aliases are appended after feature engineering and are not part of the canonical modeling feature list (they are excluded when constructing `X` for training/evaluation).
+
+### Purpose
+- Enable quick human-readable inspection of raw inputs without searching for full PATH variable names.
+- Preserve original categorical/missing encodings for auditing recode logic.
+- Facilitate documentation of wave-to-wave availability (e.g., household smokers explicit only Waves 1–3).
+
+### Coverage Summary
+| Wave | Alias Count | Notes |
+|------|-------------|-------|
+| 1 | 15 | Full baseline set including dependence, demographics, quit plans, methods durations |
+| 2 | 7  | Subset present in public-use Wave 2 for selected dependence & motivation items |
+| 3 | 7  | Mirrors Wave 2 availability |
+| 4 | 6  | Household smoker explicit item absent; proxy derivation only |
+
+### Naming Suffixes (examples)
+- `age_cat7` → PATH `R0{w}R_A_AGECAT7`
+- `sex_raw` → `R0{w}R_A_SEX`
+- `race_cat3_raw` → `R0{w}R_A_RACECAT3`
+- `hisp_raw` → `R0{w}R_A_HISP`
+- `cpd_raw` → `R0{w}R_A_PERDAY_P30D_CIGS`
+- `ttfc_raw` → `R0{w}R_A_MINFIRST_CIGS`
+- `quit_plan_any_raw` → `R0{w}_AN0235`
+- `quit_timeframe_raw` → `R0{w}_AN0240`
+- `nrt_duration_raw` → aggregated duration across `R0{w}R_A_PST12M_LSTQUIT_NRT` + ECIG variant
+- `rx_duration_raw` → aggregated prescription med duration (`R0{w}R_A_PST12M_LSTQUIT_RX` + ECIG variant)
+- `counseling_raw` → `R0{w}_AN0215`
+- `household_smokers_explicit_raw` → `R0{w}_AX0066_01` (Waves 1–3 only)
+- `smokefree_home_raw` → `R0{w}_AR1045`
+
+### Handling & Usage Notes
+1. Negative codes (e.g., -9, -8, -99911) are intentionally retained in alias columns; downstream preprocessing should reference engineered counterparts for modeling.
+2. Aliases enable cross-wave consistency checks (e.g., verifying absence of `AX0066_01` in Wave 4+).
+3. When adding Wave 5 (and later) aliases, extend the loop in `scripts/run_preprocessing.py` to include `raw_wave_cols` pattern for `{w}=5` and append new `w5_` columns using the same suffix mapping.
+4. Do not feed alias columns directly into models unless performing robustness or sensitivity analyses.
+
+### Future Extensions
+- Wave 5 alias set.
+- Restricted-use variables (if access obtained) for workplace policies or additional cessation aids.
+- Harmonized multi-wave duration normalization (minutes → days) exposed via both engineered and raw alias forms for traceability.
+
+*Alias section added: 2025-11-14*
+
+```
 
 The preprocessing and feature engineering code uses the following PATH variables (wave-aware). Replace `{w}` with the wave number 1–5.
 

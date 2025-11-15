@@ -12,6 +12,7 @@ from sklearn.metrics import (
     classification_report, confusion_matrix,
     precision_score, recall_score, f1_score
 )
+from scipy.stats import ks_2samp
 
 
 def evaluate_model(y_true, y_pred, y_pred_proba, model_name="Model"):
@@ -270,3 +271,121 @@ def calculate_disparities(fairness_df, metric='auc'):
     if len(disparities) == 0:
         return pd.DataFrame(columns=['group_variable', 'max', 'min', 'disparity', 'significant'])
     return pd.DataFrame(disparities).sort_values('disparity', ascending=False)
+
+
+# -----------------------------------------------------------------------------
+# Wave-pair evaluation and feature drift utilities
+# -----------------------------------------------------------------------------
+
+def evaluate_by_wave_pair(model, data_df, feature_cols, scaler=None, model_name="Model"):
+    """Evaluate model performance per baseline→follow-up wave pair.
+
+    Args:
+        model: Trained classifier with predict / predict_proba
+        data_df (pd.DataFrame): Dataset containing baseline_wave, followup_wave, quit_success
+        feature_cols (list[str]): Feature columns used for modeling
+        scaler: Optional scaler (e.g., StandardScaler for logistic regression)
+        model_name (str): Optional model label
+
+    Returns:
+        pd.DataFrame: Metrics per wave pair
+    """
+    required = {'baseline_wave', 'followup_wave', 'quit_success'}
+    if not required.issubset(set(data_df.columns)):
+        raise ValueError(f"Dataframe missing required columns: {required - set(data_df.columns)}")
+
+    results = []
+    for (b_wave, f_wave), group in data_df.groupby(['baseline_wave', 'followup_wave']):
+        X = group[feature_cols]
+        y = group['quit_success']
+        if len(y.unique()) < 2:
+            # Skip groups with no class variation to avoid metric errors
+            continue
+        if scaler is not None:
+            X_prepared = scaler.transform(X.fillna(X.mean()))
+        else:
+            # For tree-based models fill NaNs with column means (consistent with training)
+            X_prepared = X.fillna(X.mean())
+        y_proba = model.predict_proba(X_prepared)[:, 1]
+        y_pred = (y_proba >= 0.5).astype(int)
+        metrics = evaluate_model(y, y_pred, y_proba, model_name=model_name)
+        results.append({
+            'baseline_wave': b_wave,
+            'followup_wave': f_wave,
+            'n': len(group),
+            'quit_rate': y.mean(),
+            **{k: metrics[k] for k in ['roc_auc','pr_auc','precision','recall','f1']}
+        })
+    if not results:
+        return pd.DataFrame(columns=['baseline_wave','followup_wave','n','quit_rate','roc_auc','pr_auc','precision','recall','f1'])
+    return pd.DataFrame(results).sort_values(['baseline_wave','followup_wave'])
+
+
+def feature_drift_by_wave(df, feature_cols, reference_wave=1, top_k=20):
+    """Compute simple feature drift statistics across baseline waves.
+
+    For each feature, compare distribution in each baseline wave vs reference wave
+    using mean difference and KS statistic. Returns a long-form DataFrame filtered
+    to top_k features with largest absolute mean difference across any wave.
+
+    Args:
+        df (pd.DataFrame): Dataset with baseline_wave and feature columns
+        feature_cols (list[str]): Features to analyze
+        reference_wave (int): Wave treated as baseline for comparison
+        top_k (int): Limit output to top_k most drifted features
+
+    Returns:
+        pd.DataFrame: Columns: feature, wave, mean_ref, mean_wave, mean_diff, ks_stat, ks_pvalue
+    """
+    if 'baseline_wave' not in df.columns:
+        raise ValueError("Dataframe must contain 'baseline_wave' column for drift analysis")
+
+    ref_subset = df[df['baseline_wave'] == reference_wave]
+    if ref_subset.empty:
+        raise ValueError(f"Reference wave {reference_wave} has no rows")
+
+    rows = []
+    for feat in feature_cols:
+        ref_vals = pd.to_numeric(ref_subset[feat], errors='coerce').dropna()
+        if ref_vals.empty:
+            continue
+        ref_mean = ref_vals.mean()
+        for wave, w_subset in df.groupby('baseline_wave'):
+            w_vals = pd.to_numeric(w_subset[feat], errors='coerce').dropna()
+            if w_vals.empty:
+                continue
+            w_mean = w_vals.mean()
+            # KS test (guard identical distributions)
+            try:
+                ks_stat, ks_p = ks_2samp(ref_vals.values, w_vals.values)
+            except Exception:
+                ks_stat, ks_p = np.nan, np.nan
+            rows.append({
+                'feature': feat,
+                'wave': wave,
+                'mean_ref': ref_mean,
+                'mean_wave': w_mean,
+                'mean_diff': w_mean - ref_mean,
+                'ks_stat': ks_stat,
+                'ks_pvalue': ks_p
+            })
+    if not rows:
+        return pd.DataFrame(columns=['feature','wave','mean_ref','mean_wave','mean_diff','ks_stat','ks_pvalue'])
+    drift_df = pd.DataFrame(rows)
+    # Rank features by max absolute mean difference across waves
+    agg = drift_df.groupby('feature')['mean_diff'].apply(lambda s: s.abs().max()).sort_values(ascending=False)
+    top_features = agg.head(top_k).index
+    return drift_df[drift_df['feature'].isin(top_features)].sort_values(['feature','wave'])
+
+
+__all__ = [
+    'evaluate_model',
+    'print_evaluation_report',
+    'plot_roc_curve',
+    'plot_precision_recall_curve',
+    'plot_confusion_matrix',
+    'evaluate_fairness',
+    'calculate_disparities',
+    'evaluate_by_wave_pair',
+    'feature_drift_by_wave'
+]

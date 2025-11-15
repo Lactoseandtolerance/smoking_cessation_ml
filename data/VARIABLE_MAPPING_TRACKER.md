@@ -64,7 +64,7 @@ This document tracks the mapping of PATH Study variables across waves for smokin
 
 ---
 
-## 🔍 VARIABLES TO LOCATE
+## 🔍 VARIABLES TO LOCATE (UPDATED 2025-11-14)
 
 ### Education (HIGH PRIORITY)
 
@@ -119,16 +119,19 @@ This is now mapped wave-aware to the canonical `counseling` feature (1/0).
 
 ### Plans to Quit / Motivation (HIGH PRIORITY)
 
-**Status**: PARTIALLY IDENTIFIED
+**Status**: ✅ FOUND & IMPLEMENTED
 
-**Found but needs confirmation**:
-- R01_AC9010 through R01_AC9017 appear to be yes/no questions about quitting
-- Need to identify which specific items are:
-  - Plans to quit in next 30 days
-  - Plans to quit in next 6 months
-  - Readiness/interest to quit (scale)
+**Confirmed mapping**:
+- `R0{w}_AN0235` – Plans to quit smoking (1=Yes, 2=No; negative codes missing)
+- `R0{w}_AN0240` – Time-frame for plan (1=7 days, 2=30 days, 3=6 months, 4=1 year, 5=>1 year)
 
-**Action**: Check PATH codebook or questionnaire to see exact wording
+**Engineered features**:
+- `plans_to_quit` ← (AN0235==1) & (AN0240 <= 2) [within 30 days]
+- `motivation_high` ← (AN0235==1) & (AN0240 <= 3) [within 6 months]
+
+**Notes**:
+- Negative PATH missing codes (-1, -8, -9, etc.) are recoded to NaN before logic.
+- Additional e-cigarette specific variants (AN0235E / AN0240E) currently not used.
 
 ### Lifetime Quit Attempts (MEDIUM PRIORITY)
 
@@ -144,37 +147,37 @@ This is now mapped wave-aware to the canonical `counseling` feature (1/0).
 
 ### Home Smoking Rules (HIGH PRIORITY)
 
-**Status**: NOT FOUND
+**Status**: ✅ FOUND & IMPLEMENTED
 
-**Search needed**:
-- Smoking allowed/not allowed in home
-- Indoor smoking policy at home
-- Home completely smoke-free
+**Confirmed mapping**:
+- `R0{w}_AR1045` – Rules about smoking combustible tobacco inside home:
+   - 1 = Not allowed anywhere (mapped to `smokefree_home`=1)
+   - 2 = Allowed in some places/times
+   - 3 = Allowed anywhere/anytime (mapped to `smokefree_home`=0)
 
-**Possible patterns**:
-- Variables with RULE, INDOOR, INSIDE, HOME in label
-- May be in household/parent questionnaire, not adult; check separate files or restricted data
+**Engineered feature**:
+- `smokefree_home` ← (AR1045 == 1)
+
+**Notes**:
+- Consistent across Waves 1–5.
 
 ### Workplace Smoking Policy (LOW PRIORITY)
 
-**Status**: NOT FOUND
+**Status**: ❌ NOT FOUND (unchanged)
 
-**Search needed**:
-- Workplace smoking restrictions
-- Indoor work policy
-
-**Note**: May not be in public use files (employment data sometimes restricted)
+**Update**:
+- No explicit workplace smoking policy variable identified in public use files.
+- Placeholder `workplace_smokefree` retained in engineered features (always 0 unless mapped).
 
 ---
 
-## 🔧 NEXT STEPS
+## 🔧 NEXT STEPS (UPDATED 2025-11-14)
 
 ### Immediate Actions
 
-1. **Review PATH Codebook PDF** (if available locally or from NAHDAP)
-   - Search for education variable names
-   - Identify AC9010-9017 question text
-   - Find home smoking rules variables
+1. Confirm whether individual NRT product items are accessible (patch/gum/lozenge/inhaler/nasal).
+2. Decide on inclusion of e-cigarette-specific quit planning variables (AN0235E/AN0240E) for dual users.
+3. Explore adding interaction terms using motivation and environment (e.g., `motivation_high * smokefree_home`).
 
 2. **Check Wave-to-Wave Consistency**
    - Run script to verify all found variables exist in Waves 2-5
@@ -198,49 +201,52 @@ for wave in [1, 2, 3, 4, 5]:
     ]
 ```
 
-### Documentation Requirements
+### Documentation Updates Completed
+- Education mapping finalized (AM0018)
+- Counseling mapping finalized (AN0215)
+- Plans to quit & motivation finalized (AN0235/AN0240)
+- Home smoking rules finalized (AR1045)
+- Household smokers partial (AX0066_01 Waves 1–3; proxy for Waves 4–5)
 
-- [ ] Complete education variable mapping
-- [ ] Identify specific NRT product variables (if available)
-- [ ] Map counseling/behavioral support variables
-- [ ] Map quitline usage variable
-- [ ] Confirm plans to quit / motivation variables
-- [ ] Find home smoking rules
-- [ ] Document wave-specific differences
-- [ ] Create variable name translation table for feature engineering
+### Remaining Documentation
+- Individual NRT product disaggregation (if feasible)
+- Quitline explicit variable (still unknown; may rely on counseling)
+- Lifetime quit attempts (not located; may approximate via duration metrics)
+- Workplace policy (absent)
 
 ---
 
-## 📊 WAVE DIFFERENCES TRACKER
+## 📊 WAVE DIFFERENCES TRACKER (UPDATED 2025-11-14)
 
 ### Variables Added in Later Waves
-- TBD (need to check wave-specific codebooks)
+- None among mapped core cessation predictors (W1–W5 consistent for AN0235, AN0240, AR1045).
 
 ### Variables Removed in Later Waves
-- TBD
+- AX0066_01 (Household smoker indicator) present only W1–W3; absent W4–W5.
 
 ### Coding Changes Across Waves
-- None identified yet for confirmed variables
+- No coding changes detected for confirmed variables (AN0235, AN0240, AR1045, AM0018, AN0215).
 
 ---
 
 ## 🎯 PRIORITY RANKING FOR DASHBOARD
 
-1. **CRITICAL** (needed for model finalization):
-   - Education (strong predictor)
-   - Plans to quit / motivation (behavioral predictor)
-   - Home smoking rules (environmental predictor)
-   - Counseling (method predictor)
+1. **CRITICAL (COMPLETED)**:
+   - Education
+   - Plans to quit / motivation
+   - Home smoking rules
+   - Counseling
 
-2. **IMPORTANT** (enhance model):
-   - Individual NRT products (method specificity)
-   - Quitline (method predictor)
-   - Lifetime quit attempts (history predictor)
+2. **IMPORTANT (IN PROGRESS)**:
+   - Individual NRT products
+   - Quitline (may be embedded in counseling)
+   - Lifetime quit attempts (still absent)
 
-3. **NICE TO HAVE** (additional features):
-   - Workplace policy (environmental)
+3. **NICE TO HAVE**:
+   - Workplace policy
    - Mental health variables
    - Alcohol use
+   - E-cigarette specific quit planning (AN0235E/AN0240E)
 
 ---
 
