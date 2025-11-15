@@ -580,7 +580,7 @@ def engineer_dependence_features(df):
     
     # Cigarettes per day
     df['cpd_heavy'] = (df['cpd'] >= 20).astype(int)
-    df['cpd_light'] = (df['cpd'] <= 10).astype(int)
+    df['cpd_light'] = (df['cpd'] <= 3).astype(int)
     
     # Composite dependence score
     df['dependence_score'] = (
