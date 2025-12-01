@@ -46,7 +46,7 @@ def load_resources():
 model, importance_df = load_resources()
 
 # Sidebar navigation
-st.sidebar.title("🚭 Smoking Cessation")
+st.sidebar.title("🚭")
 st.sidebar.markdown("""**Data Source:**  
 [Population Assessment of Tobacco and Health (PATH) Study](https://pathstudyinfo.nih.gov/)  
 Waves 1-7 (2013-2020) | N=24,576 adults""")
@@ -105,7 +105,7 @@ if page == "📊 Research Findings":
     with col2:
         st.markdown("#### 🔑 Key Insights")
         st.markdown("""
-        **Light Smoking (<10 cpd)**
+        **Light Smoking (<=3 cpd)**
         - Strongest predictor of success
         - 2x higher quit rates
         
@@ -671,10 +671,10 @@ elif page == "ℹ️ About":
     - Class weighting: 2.55 (to address 72% no-quit rate)
     
     **Feature Importance** (Top 5)
-    1. CPD Light (<10/day): 20.0% gain
+    1. CPD Light (<=3/day): 36.10% gain
     2. High Dependence: 18.4% gain
     3. Time to First Cigarette: 14.1% gain
-    4. CPD Heavy (20+/day): 11.2% gain
+    4. CPD Heavy (10+/day): 11.2% gain
     5. Cigarettes Per Day: 4.4% gain
     
     ---

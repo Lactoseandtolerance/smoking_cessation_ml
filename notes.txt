@@ -1,0 +1,4 @@
+dashboard
+- predicted quit success probability by methods are way to static now despite the ordering being 
+believable. cold turkey method is calculated to feel more 'naturally', other methods seem forced 
+in order and alway round to nearest 5.
