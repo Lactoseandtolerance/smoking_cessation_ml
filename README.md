@@ -69,21 +69,100 @@ smoking_cessation_ml/
 ### 1. Clone Repository
 ```bash
 git clone <repository-url>
-cd smoking_cessation_ml
-```
+# Smoking Cessation ML
 
+Predicting and understanding smoking cessation using machine learning on the PATH Study (Waves 1–7, 2013–2020). Includes data processing, feature engineering, modeling, interpretability, fairness analysis, and a Streamlit dashboard for interactive recommendations.
+
+## Overview
+- Goal: Predict next-wave quit success and surface actionable insights (dependence, methods, environment).
+- Model: XGBoost (native NaN handling), best performance Val AUC ≈ 0.884, Test AUC ≈ 0.869.
+- Dashboard: Research Findings + Cessation Quiz with evidence-based method recommendations.
+- Fairness: Subgroup AUCs (Sex, Age cohort, Race/Ethnicity), FPR/FNR parity and base-rate monitoring framework.
+
+## Repository Structure
+- `data/`
+   - `raw/`: PATH public-use `.dta` files (W1–W5).
+   - `processed/pooled_transitions.parquet`: Engineered person-period dataset.
+   - `data_dictionary.md`, `PHASE2_VARIABLES.md`: Variable references.
+- `src/`
+   - `feature_engineering.py`: Canonical feature set (e.g., `cpd_light <= 3`, dependence, methods, environment).
+   - `modeling.py`: Train/evaluate classifiers; load/save model; person-level splits.
+   - `evaluation.py`, `reporting.py`: Metrics, summaries, and report utilities.
+- `scripts/`
+   - `run_preprocessing.py`, `run_test_evaluation.py`: Pipeline runners.
+   - `compute_subgroup_performance.py`: Subgroup AUC/FPR/FNR + visuals.
+   - `diagnose_model.py`: Quick diagnostics.
+- `dashboard/app.py`: Streamlit web app (3 sections: Findings, Quiz, About).
+- `notebooks/`: Exploration, preprocessing, feature engineering, modeling.
+- `reports/`
+   - `INTERPRETABILITY_SUMMARY.md`, `FAIRNESS_RESULTS.md`, `TEST_SET_RESULTS.md`, `PHASE5_RESULTS.md`.
+   - `figures/`: Generated charts (feature importance, subgroup AUC heatmap/bar, etc.).
+- `models/`
+   - `xgboost_best.pkl`: Trained model artifact (git-ignored).
+- Project docs: `README.md`, `MVP_PLAN.md`, `NEXT_STEPS.md`, `PROJECT_STATUS.md`.
+
+## Setup
+Prereqs: macOS, Python 3.13, zsh.
+
+```bash
+# Create & activate venv (if not already)
 ### 2. Create Virtual Environment
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
+
+## Data
+- Source: Population Assessment of Tobacco and Health (PATH) Study.
+- Public info: https://pathstudyinfo.nih.gov/
+- Processed dataset: `data/processed/pooled_transitions.parquet` (≈60k person-period rows, 52 features).
+
+## Modeling
+- Algorithm: XGBoost with native missing-value handling.
+- Key features: dependence (`ttfc_minutes`, `cpd`, `cpd_light ≤ 3`, `cpd_heavy ≥ 20`), environment, motivation, prior quits.
+- Person-level splits prevent leakage.
+
+Train/evaluate quickly (example):
+```bash
 ### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
+
+## Dashboard
+Interactive dashboard for presenting findings and generating personalized recommendations.
+
+Run locally:
+```bash
 ```
 
 ### 4. Obtain PATH Study Data
+
+Sections:
+- Research Findings: Study metrics, feature importance, method evidence.
+- Cessation Quiz: Collects key inputs; predicts success for methods; action plan.
+- About: Study background, methodology, limitations, disclaimers.
+
+## Fairness & Subgroup Performance
+- Script: `scripts/compute_subgroup_performance.py` computes AUC, FPR/FNR, and base rates by subgroup.
+- Outputs:
+   - `reports/SUBGROUP_PERFORMANCE.csv`
+   - `reports/figures/subgroup_auc_bar.png`
+   - `reports/figures/subgroup_auc_heatmap.png`
+   - Summary appended to `reports/FAIRNESS_RESULTS.md`
+
+Implications for deployment:
+- Monitor performance drift across demographic groups.
+- Transparently report disparities before clinical use.
+- Collect additional data for underrepresented groups when needed.
+
+## Key Results
+- Best model (XGBoost): Val AUC ≈ 0.884, Test AUC ≈ 0.869.
+- Top predictors: Light smoking (≤3 CPD), high dependence (TTFC/CPD), time-to-first cigarette, heavy smoking (≥20 CPD).
+- Recommendation logic: Prefer pharmacotherapy + counseling for high dependence; cold-turkey viable for true light smokers.
+
+## Common Commands
+```bash
 1. Register at ICPSR: https://www.icpsr.umich.edu/
 2. Navigate to PATH Study Series: https://www.icpsr.umich.edu/web/NAHDAP/series/606
 3. Download Public Use Files for Waves 1-5 (STATA .dta or SPSS .sav format)
@@ -95,6 +174,12 @@ pip install -r requirements.txt
 **Note:** PATH Study provides data in STATA (.dta) or SPSS (.sav) format, NOT CSV. Pandas can read both formats natively (STATA) or with pyreadstat (SPSS).
 
 ## Usage
+
+## Notes
+- Model artifacts (`models/*.pkl`) are git-ignored.
+- SHAP visualizations were deprecated due to XGBoost 3.1+ compatibility; replaced with built-in importance and PDPs.
+- Missing values are handled natively by XGBoost; avoid mean imputation.
+
 
 ### Running Analysis Notebooks
 ```bash
