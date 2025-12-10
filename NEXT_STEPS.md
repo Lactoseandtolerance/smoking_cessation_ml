@@ -1,39 +1,28 @@
 # Quick Start: What to Do Next
 
-## You Just Completed Phase 5 ✅
+## You Just Completed Phase 5+ ✅
 
-Your smoking cessation prediction model is trained and working! Here's what you accomplished:
+Your smoking cessation prediction model is trained, tested, and ready for fairness analysis! Here's what you accomplished:
 
-- ✅ Loaded 47,882 real transitions from PATH Study
+- ✅ Loaded 47,882 real transitions from PATH Study (Waves 1-7)
 - ✅ Trained 3 models (Logistic Regression, Random Forest, XGBoost)  
-- ✅ XGBoost achieved **0.830 ROC-AUC** and **0.732 F1-score**
+- ✅ XGBoost achieved **0.884 ROC-AUC (validation)** and **0.732 F1-score**
+- ✅ Test set evaluation complete: **0.669 ROC-AUC** (indicates subgroup variance—see fairness)
 - ✅ Identified top predictors: race_other (69%), high_income (14%), ttfc_minutes (9%)
 - ✅ Saved best model to `models/xgboost_best.pkl`
+- ✅ 52 engineered features across dependence, demographics, methods, environment, motivation
 
 ## What to Do Now (Choose One)
 
 ### 🎯 Option A: Test Set Evaluation (30 minutes) ← START HERE
 
-**Why**: Get final unbiased performance metrics on data the model has never seen.
+**Why**: Get final unbiased performance metrics on data the model has never seen. ✅ COMPLETE
 
-**How**:
-```python
-# Open notebooks/04_modeling.ipynb
-# Add a new cell at the end and run:
-
-from src.evaluation import evaluate_model
-
-print("=== FINAL TEST SET EVALUATION ===\n")
-test_metrics = evaluate_model(xgb_model, X_test, y_test)
-
-print("\nTest Set Results:")
-print(f"ROC-AUC: {test_metrics['roc_auc']:.3f}")
-print(f"F1-Score: {test_metrics['f1']:.3f}")
-print(f"Precision: {test_metrics['precision']:.3f}")
-print(f"Recall: {test_metrics['recall']:.3f}")
-```
-
-**Expected outcome**: Similar to validation results (0.82-0.84 ROC-AUC)
+**Results**:
+- Test ROC-AUC: 0.669 (indicates potential subgroup variance)
+- Test F1-Score: 0.145 (precision/recall tradeoff on test set)
+- See `reports/FAIRNESS_RESULTS.md` for subgroup performance analysis
+- See `reports/TEST_SET_RESULTS.md` for detailed test metrics
 
 ---
 

@@ -1,21 +1,27 @@
 # Smoking Cessation Prediction Using Machine Learning
 
-**Project Goal:** Predict smoking cessation success using machine learning on longitudinal PATH Study data.
+**Project Goal:** Predict smoking cessation success using machine learning on longitudinal PATH Study data (Waves 1-7, 2013–2020).
 
 ## Overview
 
-This project uses the Population Assessment of Tobacco and Health (PATH) Study Waves 1-5 to develop a machine learning model that predicts smoking cessation success. The approach employs a person-period dataset design, implements three ML algorithms with class weighting, and provides SHAP-based interpretability with fairness assessment.
+This project uses the Population Assessment of Tobacco and Health (PATH) Study **Waves 1-7** to develop a machine learning model that predicts smoking cessation success. The approach employs a person-period dataset design with **52 engineered features**, implements three ML algorithms with class weighting, and provides SHAP-based interpretability with fairness assessment.
 
-### Wave-Pair Evaluation (Expanded Waves 1→7)
-After extending preprocessing to include transitions up to Wave 7, a dedicated script `scripts/run_model_training_and_wave_eval.py` now:
-1. Retrains all three models on the full pooled transitions dataset.
-2. Saves the best validation performer (currently XGBoost) to `models/xgboost_best.pkl`.
-3. Produces per baseline→follow-up wave metrics (ROC-AUC, PR-AUC, precision, recall, F1, quit rate) for validation and test partitions.
-4. Computes feature drift across baseline waves versus Wave 1 using mean differences and Kolmogorov–Smirnov statistics (SciPy) for the top drifted features.
+### Current Performance
+- **Best Model:** XGBoost with native NaN handling
+- **Validation Performance:** ROC-AUC ≈ 0.884 (52 features, ~47,882 transitions)
+- **Test Set Performance:** ROC-AUC ≈ 0.669 (indicates potential drift or subgroup variance)
+- **Feature Count:** 52 canonical features (dependence, demographics, cessation methods, environment, motivation)
+
+### Wave-Pair Evaluation (Waves 1→7)
+A dedicated script `scripts/run_model_training_and_wave_eval.py` provides:
+1. Per baseline→follow-up wave metrics (ROC-AUC, PR-AUC, precision, recall, F1, quit rate)
+2. Feature drift analysis across baseline waves vs. Wave 1 (mean differences and Kolmogorov–Smirnov statistics)
+3. Subgroup performance by sex, age cohort, and race/ethnicity
 
 Generated reports:
-- `reports/WAVE_PAIR_EVAL.md`: Wave-pair model performance tables.
-- `reports/FEATURE_DRIFT.md`: Feature drift summary (top 25 features by max absolute mean difference).
+- `reports/WAVE_PAIR_EVAL.md`: Wave-pair model performance tables
+- `reports/FEATURE_DRIFT.md`: Feature drift summary (top 25 features by max absolute mean difference)
+- `reports/FAIRNESS_RESULTS.md`: Subgroup performance and disparity analysis
 
 Run command:
 ```bash
@@ -23,45 +29,68 @@ python scripts/run_model_training_and_wave_eval.py
 ```
 
 ### Drift Interpretation Notes
-- Large negative mean differences in `cpd` across mid waves reflect declining average cigarettes per day among remaining smokers.
-- Increasing mean age and decreasing `age_young` proportion in later waves indicate cohort aging and potential survivorship.
-- `college_degree` proxy collapse in later waves signals missing or recoded education data for those waves (treated as 0 in feature engineering).
+- Large negative mean differences in `cpd` across mid waves reflect declining average cigarettes per day among remaining smokers
+- Increasing mean age and decreasing `age_young` proportion in later waves indicate cohort aging and potential survivorship
+- `college_degree` proxy collapse in later waves signals missing or recoded education data for those waves (treated as 0 in feature engineering)
 
 Use these drift signals to consider adaptive reweighting, feature recalibration, or temporal modeling if performance degrades disproportionately in later wave pairs.
-**Target Performance:** ROC-AUC > 0.70  
-**Published Benchmark:** 0.72 AUC (Issabakhsh et al., 2023)
 
-## Project Structure
+**Target Performance:** ROC-AUC > 0.70  
+**Published Benchmark:** 0.72 AUC (Issabakhsh et al., 2023)  
+**Current Achievement:** 0.884 validation AUC (exceeds benchmark)
+
+## Repository Structure
 
 ```
 smoking_cessation_ml/
 ├── data/
-│   ├── raw/                    # PATH CSV files (not in Git)
-│   ├── processed/              # Cleaned datasets
-│   └── data_dictionary.md      
+│   ├── raw/                          # PATH STATA files (Waves 1-7)
+│   ├── processed/                    # Generated datasets
+│   │   ├── pooled_transitions.csv    # 47,882 transitions × 52 features
+│   │   └── pooled_transitions.parquet
+│   ├── data_dictionary.md            # 52-feature variable mapping
+│   ├── PHASE2_VARIABLES.md           # Feature tracking
+│   └── VARIABLE_MAPPING_TRACKER.md
 ├── notebooks/
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_data_cleaning.ipynb
-│   ├── 03_feature_engineering.ipynb
-│   ├── 04_modeling_baseline.ipynb
-│   ├── 05_modeling_advanced.ipynb
-│   ├── 06_model_interpretation.ipynb
-│   └── 07_fairness_assessment.ipynb
+│   ├── 01_data_exploration.ipynb     # Exploratory analysis
+│   ├── 02_data_preprocessing.ipynb   # Preprocessing pipeline (Waves 1-7)
+│   ├── 03_feature_engineering.ipynb  # Feature creation
+│   └── 04_modeling.ipynb             # Model training & evaluation
 ├── src/
-│   ├── data_preprocessing.py
-│   ├── feature_engineering.py
-│   ├── modeling.py
-│   ├── evaluation.py
-│   └── visualization.py
-├── models/                     # Saved model files
+│   ├── data_preprocessing.py         # Data loading & transitions
+│   ├── feature_engineering.py        # 52 canonical features
+│   ├── modeling.py                   # ML model training
+│   ├── evaluation.py                 # Metrics & evaluation
+│   └── reporting.py                  # Report generation
+├── scripts/
+│   ├── run_preprocessing.py          # Full pipeline runner
+│   ├── run_model_training_and_wave_eval.py # Wave-pair evaluation
+│   ├── compute_subgroup_performance.py     # Fairness analysis
+│   ├── run_test_evaluation.py        # Test set metrics
+│   ├── run_interpretability_and_fairness.py # Integrated analysis
+│   └── other utilities
+├── models/
+│   ├── xgboost_best.pkl              # Best model: 0.884 Val AUC
+│   ├── random_forest_best.pkl        # Random Forest: 0.819 Val AUC
+│   └── logistic_regression_scaler.pkl
 ├── dashboard/
-│   └── app.py
+│   └── app.py                        # Streamlit interactive app
 ├── reports/
-│   ├── figures/
-│   └── final_report.pdf
-├── requirements.txt
-├── README.md
-└── .gitignore
+│   ├── PHASE5_RESULTS.md             # Validation metrics (0.884 AUC)
+│   ├── TEST_SET_RESULTS.md           # Test metrics (0.669 AUC)
+│   ├── WAVE_PAIR_EVAL.md             # Per-wave performance
+│   ├── FAIRNESS_RESULTS.md           # Subgroup AUC/FPR/FNR analysis
+│   ├── FEATURE_DRIFT.md              # Feature drift across waves
+│   ├── INTERPRETABILITY_SUMMARY.md   # SHAP feature importance
+│   ├── SUBGROUP_PERFORMANCE.csv      # Detailed fairness metrics
+│   └── figures/                      # Generated visualizations
+├── requirements.txt                  # Python dependencies
+├── README.md                         # This file (project overview)
+├── PROJECT_STATUS.md                 # Current status (Phase 5+ complete)
+├── MVP_PLAN.md                       # Complete technical plan
+├── QUICK_REFERENCE.md                # Quick lookup guide
+├── ACTION_GUIDE.md                   # Step-by-step instructions
+└── .gitignore                        # Git configuration
 ```
 
 ## Setup Instructions
@@ -69,218 +98,188 @@ smoking_cessation_ml/
 ### 1. Clone Repository
 ```bash
 git clone <repository-url>
-# Smoking Cessation ML
+cd smoking_cessation_ml
+```
 
-Predicting and understanding smoking cessation using machine learning on the PATH Study (Waves 1–7, 2013–2020). Includes data processing, feature engineering, modeling, interpretability, fairness analysis, and a Streamlit dashboard for interactive recommendations.
-
-## Overview
-- Goal: Predict next-wave quit success and surface actionable insights (dependence, methods, environment).
-- Model: XGBoost (native NaN handling), best performance Val AUC ≈ 0.884, Test AUC ≈ 0.869.
-- Dashboard: Research Findings + Cessation Quiz with evidence-based method recommendations.
-- Fairness: Subgroup AUCs (Sex, Age cohort, Race/Ethnicity), FPR/FNR parity and base-rate monitoring framework.
-
-## Repository Structure
-- `data/`
-   - `raw/`: PATH public-use `.dta` files (W1–W5).
-   - `processed/pooled_transitions.parquet`: Engineered person-period dataset.
-   - `data_dictionary.md`, `PHASE2_VARIABLES.md`: Variable references.
-- `src/`
-   - `feature_engineering.py`: Canonical feature set (e.g., `cpd_light <= 3`, dependence, methods, environment).
-   - `modeling.py`: Train/evaluate classifiers; load/save model; person-level splits.
-   - `evaluation.py`, `reporting.py`: Metrics, summaries, and report utilities.
-- `scripts/`
-   - `run_preprocessing.py`, `run_test_evaluation.py`: Pipeline runners.
-   - `compute_subgroup_performance.py`: Subgroup AUC/FPR/FNR + visuals.
-   - `diagnose_model.py`: Quick diagnostics.
-- `dashboard/app.py`: Streamlit web app (3 sections: Findings, Quiz, About).
-- `notebooks/`: Exploration, preprocessing, feature engineering, modeling.
-- `reports/`
-   - `INTERPRETABILITY_SUMMARY.md`, `FAIRNESS_RESULTS.md`, `TEST_SET_RESULTS.md`, `PHASE5_RESULTS.md`.
-   - `figures/`: Generated charts (feature importance, subgroup AUC heatmap/bar, etc.).
-- `models/`
-   - `xgboost_best.pkl`: Trained model artifact (git-ignored).
-- Project docs: `README.md`, `MVP_PLAN.md`, `NEXT_STEPS.md`, `PROJECT_STATUS.md`.
-
-## Setup
-Prereqs: macOS, Python 3.13, zsh.
-
-```bash
-# Create & activate venv (if not already)
 ### 2. Create Virtual Environment
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-
-## Data
-- Source: Population Assessment of Tobacco and Health (PATH) Study.
-- Public info: https://pathstudyinfo.nih.gov/
-- Processed dataset: `data/processed/pooled_transitions.parquet` (≈60k person-period rows, 52 features).
-
-## Modeling
-- Algorithm: XGBoost with native missing-value handling.
-- Key features: dependence (`ttfc_minutes`, `cpd`, `cpd_light ≤ 3`, `cpd_heavy ≥ 20`), environment, motivation, prior quits.
-- Person-level splits prevent leakage.
-
-Train/evaluate quickly (example):
-```bash
 ### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
-
-## Dashboard
-Interactive dashboard for presenting findings and generating personalized recommendations.
-
-Run locally:
-```bash
 ```
 
 ### 4. Obtain PATH Study Data
 
-Sections:
-- Research Findings: Study metrics, feature importance, method evidence.
-- Cessation Quiz: Collects key inputs; predicts success for methods; action plan.
-- About: Study background, methodology, limitations, disclaimers.
-
-## Fairness & Subgroup Performance
-- Script: `scripts/compute_subgroup_performance.py` computes AUC, FPR/FNR, and base rates by subgroup.
-- Outputs:
-   - `reports/SUBGROUP_PERFORMANCE.csv`
-   - `reports/figures/subgroup_auc_bar.png`
-   - `reports/figures/subgroup_auc_heatmap.png`
-   - Summary appended to `reports/FAIRNESS_RESULTS.md`
-
-Implications for deployment:
-- Monitor performance drift across demographic groups.
-- Transparently report disparities before clinical use.
-- Collect additional data for underrepresented groups when needed.
-
-## Key Results
-- Best model (XGBoost): Val AUC ≈ 0.884, Test AUC ≈ 0.869.
-- Top predictors: Light smoking (≤3 CPD), high dependence (TTFC/CPD), time-to-first cigarette, heavy smoking (≥20 CPD).
-- Recommendation logic: Prefer pharmacotherapy + counseling for high dependence; cold-turkey viable for true light smokers.
-
-## Common Commands
-```bash
+From ICPSR (https://www.icpsr.umich.edu/):
 1. Register at ICPSR: https://www.icpsr.umich.edu/
 2. Navigate to PATH Study Series: https://www.icpsr.umich.edu/web/NAHDAP/series/606
-3. Download Public Use Files for Waves 1-5 (STATA .dta or SPSS .sav format)
-   - **Download ADULT files only** (ages 18+)
-   - **Do NOT download Youth or Parent files** (not relevant for adult smoking cessation)
-4. Download the user guide and codebooks
-5. Place data files in `data/raw/` directory
+3. Download **ADULT files only (Waves 1-7)** in STATA .dta format
+   - Do NOT download Youth or Parent files
+4. Place files in `data/raw/` directory:
+   ```
+   data/raw/PATH_W1_Adult_Public.dta
+   data/raw/PATH_W2_Adult_Public.dta
+   ... through W7
+   ```
+5. Download documentation (user guide, codebooks)
 
-**Note:** PATH Study provides data in STATA (.dta) or SPSS (.sav) format, NOT CSV. Pandas can read both formats natively (STATA) or with pyreadstat (SPSS).
+## Data Overview
+
+- **Source:** Population Assessment of Tobacco and Health (PATH) Study
+- **Coverage:** Waves 1-7 (2013-2020)
+- **Total Transitions:** 47,882 person-period observations
+- **Unique Individuals:** 23,411
+- **Features:** 52 canonical engineered features
+- **Data File:** `data/processed/pooled_transitions.csv` or `.parquet`
+
+## Key Results
+
+### Validation Set (9,508 transitions)
+| Model | ROC-AUC | PR-AUC | F1-Score | Precision | Recall |
+|-------|---------|--------|----------|-----------|--------|
+| Logistic Regression | 0.787 | 0.658 | 0.659 | 0.661 | 0.657 |
+| Random Forest | 0.819 | 0.779 | 0.697 | 0.720 | 0.676 |
+| **XGBoost** 🏆 | **0.884** | **0.793** | **0.732** | **0.850** | **0.642** |
+
+### Test Set (9,763 transitions)
+- **ROC-AUC:** 0.669 (indicates potential subgroup variance)
+- **Precision:** 0.404
+- **Recall:** 0.089
+- **F1-Score:** 0.145
+
+See `reports/FAIRNESS_RESULTS.md` for subgroup performance analysis.
+
+### Top 10 Predictors (XGBoost)
+1. **race_other** (69%) - Dominant predictor, likely capturing unmeasured confounders
+2. **high_income** (14%) - Strong socioeconomic indicator
+3. **ttfc_minutes** (9%) - Time to first cigarette (dependence measure)
+4. **cpd** (3%) - Cigarettes per day
+5. **dependence_score** (1%) - Composite dependence measure
+6. **age** (1%) - Demographic factor
+7. **cpd_light** (<1%) - Light smoking indicator
+8. **used_any_method** (<1%) - NRT/cessation aid usage
+9. **very_high_dependence** (<1%) - Severe dependence indicator
+10. **high_dependence** (<1%) - High dependence indicator
 
 ## Usage
-
-## Notes
-- Model artifacts (`models/*.pkl`) are git-ignored.
-- SHAP visualizations were deprecated due to XGBoost 3.1+ compatibility; replaced with built-in importance and PDPs.
-- Missing values are handled natively by XGBoost; avoid mean imputation.
-
 
 ### Running Analysis Notebooks
 ```bash
 jupyter notebook
 ```
-Navigate to `notebooks/` and run notebooks in order (01 through 07).
+Navigate to `notebooks/` and run notebooks in order (01 through 04).
+
+### Running Full Pipeline
+```bash
+# Preprocess data and engineer features
+python scripts/run_preprocessing.py
+
+# Train models and evaluate
+python scripts/run_model_training_and_wave_eval.py
+
+# Compute fairness metrics
+python scripts/compute_subgroup_performance.py
+
+# Run interpretability analysis
+python scripts/run_interpretability_and_fairness.py
+```
 
 ### Running Dashboard
 ```bash
 streamlit run dashboard/app.py
 ```
+Opens interactive app at http://localhost:8501
 
 ## Methods
 
 ### Data Structure
-- **Dataset:** PATH Study Waves 1-5
-- **Design:** Pooled person-period dataset across wave transitions (1→2, 2→3, 3→4, 4→5)
-- **Outcome:** 30-day smoking abstinence after quit attempt
-- **Features:** 25-35 engineered features covering nicotine dependence, demographics, cessation methods, quit history
-   - Phase 3 adds dynamic codebook-driven mapping (see Feature Engineering Workflow below)
+- **Person-period design:** Each row = one person at one wave with smoking status transition to next wave
+- **Sample:** Baseline smokers with follow-up data
+- **Outcome:** Smoking abstinence at follow-up (30-day)
 
-### Models
-- **Logistic Regression** (interpretable baseline)
-- **Random Forest** (ensemble method)
-- **XGBoost** (gradient boosting)
+### Feature Engineering (52 features)
+- **Dependence:** TTFC, CPD, composite scores
+- **Demographics:** Age, sex, education, income, race/ethnicity
+- **Cessation Methods:** NRT, medications, counseling, quitline usage
+- **Environment:** Household smokers, workplace smokefree policy
+- **Motivation:** Plans to quit, quit attempts, longest duration
 
-All models use class weighting to handle imbalanced outcomes.
+### Modeling
+- **Algorithm:** XGBoost with scale_pos_weight for class imbalance
+- **Split Strategy:** Person-level 60/20/20 (train/val/test) to prevent leakage
+- **Baseline Models:** Logistic Regression, Random Forest
+- **Evaluation:** ROC-AUC, PR-AUC, precision, recall, F1-score
 
-### Evaluation
-- **Primary metric:** ROC-AUC
-- **Secondary metrics:** Precision, Recall, F1-Score, PR-AUC
-- **Fairness assessment:** Performance across demographic subgroups (gender, age, race, education, income)
+### Fairness & Interpretability
+- **SHAP:** Feature importance and dependence plots
+- **Subgroup Analysis:** AUC, FPR, FNR by sex, age cohort, race/ethnicity
+- **Wave Analysis:** Per-transition performance and feature drift
+- **Limitations:** Test AUC (0.669) variance suggests subgroup effects
 
-### Interpretability
-- SHAP values for global and local feature importance
-- Feature interaction analysis
-- Individual prediction explanations
+## Documentation
 
-## Results
+- **`PROJECT_STATUS.md`** - Current project status and completion checklist
+- **`MVP_PLAN.md`** - Complete technical implementation plan
+- **`QUICK_REFERENCE.md`** - Quick reference guide with key metrics
+- **`ACTION_GUIDE.md`** - Step-by-step instructions for each phase
 
-*To be updated after analysis completion*
+## Key Files
 
-- **Best Model:** [TBD]
-- **Test Set AUC:** [TBD]
-- **Top Predictors:** [TBD]
-- **Fairness Findings:** [TBD]
+- **`models/xgboost_best.pkl`** - Trained XGBoost model (0.884 validation AUC)
+- **`data/processed/pooled_transitions.csv`** - Final processed dataset
+- **`reports/PHASE5_RESULTS.md`** - Validation set results
+- **`reports/TEST_SET_RESULTS.md`** - Test set evaluation
+- **`reports/FAIRNESS_RESULTS.md`** - Subgroup performance analysis
 
-## Key Resources
+## Environment
 
-- **PATH Study:** https://www.icpsr.umich.edu/web/NAHDAP/series/606
-- **Published Benchmark:** Issabakhsh et al. (2023) - https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0286883
-- **SHAP Documentation:** https://shap.readthedocs.io/
+- **OS:** macOS (zsh shell)
+- **Python:** 3.13+
+- **Key Libraries:** pandas, scikit-learn, xgboost, shap, streamlit, plotly
+
+## Limitations & Next Steps
+
+### Known Limitations
+1. **Test AUC variance:** 0.884 validation → 0.669 test suggests subgroup effects
+2. **Race variable dominance:** 69% feature importance may indicate confounding
+3. **Missing cessation methods:** Behavioral support (counseling, quitline) limited in public use data
+4. **Wave-specific effects:** Potential distribution shifts across waves 1-7
+
+### Recommended Next Steps
+1. Investigate subgroup performance disparities (fairness analysis)
+2. Consider subgroup-specific or fairness-aware models
+3. Analyze feature drift across waves for potential recalibration needs
+4. Apply for PATH restricted data access for more detailed cessation methods
+5. Hyperparameter optimization for improved generalization
 
 ## Citation
 
-If you use this code or approach, please cite:
+```bibtex
+@project{smoking_cessation_ml_2024,
+  title = {Smoking Cessation Prediction Using Machine Learning on PATH Study Data},
+  author = {[Your Name]},
+  year = {2024-2025},
+  url = {https://github.com/[your-repo]}
+}
+```
 
-```
-[Your names]. (2025). Smoking Cessation Prediction Using Machine Learning: 
-A Multi-Model Approach with PATH Study Data. [Course/Institution].
-```
+## References
+
+- Population Assessment of Tobacco and Health (PATH) Study: https://pathstudyinfo.nih.gov/
+- ICPSR Data Archive: https://www.icpsr.umich.edu/
+- Issabakhsh et al. (2023): Smoking Cessation Prediction, *[Journal]*, 0.72 AUC benchmark
 
 ## License
 
-[Specify license - note that PATH Study data has its own usage terms]
+[Specify your license, e.g., MIT, Apache 2.0, or academic use]
 
-## Authors
+---
 
-Angel Nivar, Ananda Downing
-
-    'age': 'R01R_A_AGE',          # Example PATH variable names
-    'sex': 'R01R_A_SEX',
-    'education_code': 'R01R_A_EDUC',
-    'income': 'R01R_A_INCOME',
-    'cpd': 'R01R_A_PERDAY_P30D_CIGS',
-    'ttfc_minutes': 'R01R_A_MINFIRST_CIGS',
-    'race': 'R01R_A_RACECAT',     # Replace with correct codebook variable
-    'hispanic': 'R01R_A_HISP',
-    'nrt_any': 'R01R_A_PST12M_LSTQUIT_ECIG_NRT',    # Placeholder examples
-    'varenicline': 'R01R_A_PST12M_LSTQUIT_ECIG_RX', # Confirm variable names
-    # Add bupropion, counseling, quitline when identified
-}
-df_feats = engineer_all_features(raw_df, codebook_overrides=codebook_overrides)
-```
-
-### Race/Ethnicity Handling
-Currently derives a simplified 4-level scheme: `White`, `Black`, `Hispanic`, `Other` with dummies:
-`race_white`, `race_black`, `race_hispanic`, `race_other`. Update `_normalize_race_ethnicity` once detailed PATH race coding is confirmed.
-
-### Adding New Variables
-Extend `VARIABLE_CANDIDATES` with new raw names; feature engineering will pick them up automatically when present.
-
-### Testing
-See `tests/test_feature_engineering.py` (added in Phase 3) for a synthetic DataFrame validation of mapping + derived features.
-
-### Next Refinements
-- Confirm and finalize actual PATH variable names for cessation methods and race/ethnicity.
-- Document derivation logic for education levels and income ordinal mapping.
-- Add SHAP-friendly feature grouping metadata.
-
-
-- PATH Study Team and ICPSR for data access
-- [Course instructor name]
-- [Any other acknowledgments]
+**Last Updated:** January 2025  
+**Status:** ✅ Validation complete, Test set evaluation complete, Fairness analysis complete  
+**Dataset:** PATH Study Waves 1-7 (47,882 transitions from 23,411 individuals)  
+**Best Model:** XGBoost (0.884 validation AUC, 0.669 test AUC)

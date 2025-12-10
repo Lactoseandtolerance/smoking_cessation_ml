@@ -14,18 +14,20 @@
 
 2. **Download PATH Study Data**
    - Navigate to: https://www.icpsr.umich.edu/web/NAHDAP/series/606
-   - **Data Format:** PATH Study provides data in **STATA (.dta)** or **SPSS (.sav)** format, NOT CSV
+   - **Data Format:** PATH Study provides data in **STATA (.dta)** or **SPSS (.sav)** format
    - **Which Files to Download:**
      * **ADULT data only** (ages 18+) - this is what you need for smoking cessation
-     * Download for Waves 1-5: Adult questionnaire data files
+     * Download for **Waves 1-7**: Adult questionnaire data files (2013–2020 panel)
      * ⚠️ **Do NOT download Youth or Parent files** - not relevant for adult smoking cessation
    
    **Specific files needed:**
-   - Wave 1: Adult Public Use Files (.dta or .sav format)
-   - Wave 2: Adult Public Use Files (.dta or .sav format)
-   - Wave 3: Adult Public Use Files (.dta or .sav format)
-   - Wave 4: Adult Public Use Files (.dta or .sav format)
-   - Wave 5: Adult Public Use Files (.dta or .sav format)
+   - Wave 1: Adult Public Use Files (.dta format)
+   - Wave 2: Adult Public Use Files (.dta format)
+   - Wave 3: Adult Public Use Files (.dta format)
+   - Wave 4: Adult Public Use Files (.dta format)
+   - Wave 5: Adult Public Use Files (.dta format)
+   - Wave 6: Adult Public Use Files (.dta format)
+   - Wave 7: Adult Public Use Files (.dta format)
    
    **Documentation to download:**
    - User Guide (565 pages PDF)
@@ -62,7 +64,7 @@
 
 ### ✅ COMPLETION CHECKLIST:
 - [ ] PATH Study account created and verified
-- [ ] All 5 waves downloaded (CSV format)
+- [ ] All 7 waves downloaded (STATA .dta format)
 - [ ] Documentation downloaded
 - [ ] Files placed in `data/raw/`
 - [ ] Virtual environment created and activated
